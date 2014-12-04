@@ -20,6 +20,7 @@
 package asset.pipeline.i18n
 
 import asset.pipeline.AssetHelper
+import asset.pipeline.AssetFile
 import groovy.transform.CompileStatic
 import java.util.regex.Matcher
 import java.util.regex.Pattern
@@ -65,8 +66,8 @@ class I18nPreprocessor {
      * @param input the content of the i18n file
      * @return      the pre-processed content
      */
-    String preprocess(File file, String input = file.text) {
-        Set<File> fileHistory = new HashSet<>()
+    String preprocess(AssetFile file, String input = file.inputStream.text) {
+        Set<AssetFile> fileHistory = new HashSet<>()
         fileHistory << file
         preprocess input, fileHistory
     }
@@ -81,7 +82,7 @@ class I18nPreprocessor {
      * @param input the content of the i18n file
      * @return      the pre-processed content
      */
-    protected String preprocess(String input, Set<File> fileHistory) {
+    protected String preprocess(String input, Set<AssetFile> fileHistory) {
         StringBuffer buf = new StringBuffer(input.length())
         input.eachLine { String line ->
             line = line.trim()
@@ -104,18 +105,18 @@ class I18nPreprocessor {
      * @param fileName  the name of the import file
      * @return          the pre-processed content of the import file
      */
-    protected String resolveImport(String fileName, Set<File> fileHistory) {
+    protected String resolveImport(String fileName, Set<AssetFile> fileHistory) {
         if (!fileName.endsWith('.i18n')) {
             fileName += '.i18n'
         }
 
-        File importFile = (File) AssetHelper.fileForFullName(fileName)
+        AssetFile importFile = (AssetFile) AssetHelper.fileForFullName(fileName)
         if (importFile == null || importFile in fileHistory) {
             return ''
         }
 
         fileHistory << importFile
-        preprocess importFile.text, fileHistory
+        preprocess importFile.inputStream.text, fileHistory
     }
 
 

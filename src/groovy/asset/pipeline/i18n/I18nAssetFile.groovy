@@ -20,9 +20,10 @@
 package asset.pipeline.i18n
 
 import asset.pipeline.AbstractAssetFile
+import asset.pipeline.AssetCompiler
 import asset.pipeline.AssetHelper
 import asset.pipeline.CacheManager
-
+import java.util.regex.Pattern
 
 /**
  * The class {@code I18nAssetFile} represents an asset file which converts code
@@ -41,34 +42,27 @@ class I18nAssetFile extends AbstractAssetFile {
     static extensions = ['i18n']
     static final String compiledExtension = 'js'
     static processors = [I18nProcessor]
-
-
+    Pattern directivePattern = ~/(?m)#=(.*)/
     //-- Public methods -------------------------
 
-    @Override
-    String directiveForLine(String line) {
-        line.find(/#=(.*)/) { fullMatch, directive -> directive }
-    }
 
     @Override
-    String processedStream(precompiler) {
+    String processedStream(AssetCompiler precompiler) {
         def skipCache = precompiler ?: (!processors || processors.size() == 0)
 
         String fileText
-        if (baseFile?.encoding || encoding) {
-            fileText = file?.getText(
-                baseFile?.encoding ? baseFile.encoding : encoding
-            )
+        if(baseFile?.encoding || encoding) {
+            fileText = inputStream?.getText(baseFile?.encoding ? baseFile.encoding : encoding)
         } else {
-            fileText = file?.text
+            fileText = inputStream?.text
         }
 
-        fileText = I18nPreprocessor.instance.preprocess(file, fileText)
+        fileText = I18nPreprocessor.instance.preprocess(this, fileText)
 
         def md5 = AssetHelper.getByteDigest(fileText.bytes)
         if (!skipCache) {
             def cache = CacheManager.findCache(
-                file.canonicalPath, md5, baseFile?.file?.canonicalPath
+                path, md5, baseFile?.path
             )
             if (cache) {
                 return cache
@@ -82,8 +76,8 @@ class I18nAssetFile extends AbstractAssetFile {
 
         if (!skipCache) {
             CacheManager.createCache(
-                file.canonicalPath, md5, fileText,
-                baseFile?.file?.canonicalPath
+                path, md5, fileText,
+                baseFile?.path
             )
         }
 
