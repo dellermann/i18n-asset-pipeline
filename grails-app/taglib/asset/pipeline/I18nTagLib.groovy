@@ -22,6 +22,13 @@ package asset.pipeline
 import org.codehaus.groovy.grails.commons.GrailsApplication
 
 
+/**
+ * Class {@code I18nTagLib} contains tags that help loading client-side i18n
+ * files.
+ *
+ * @author  Daniel Ellermann
+ * @version 1.0
+ */
 class I18nTagLib {
 
     //-- Class variables ------------------------

@@ -22,10 +22,8 @@ package asset.pipeline.i18n
 import asset.pipeline.AbstractProcessor
 import asset.pipeline.AssetCompiler
 import asset.pipeline.AssetFile
-import asset.pipeline.AssetHelper
 import groovy.transform.CompileStatic
 import java.util.regex.Matcher
-import java.util.regex.Pattern
 import org.springframework.core.io.DefaultResourceLoader
 import org.springframework.core.io.Resource
 import org.springframework.core.io.ResourceLoader
@@ -55,7 +53,8 @@ import org.springframework.core.io.ResourceLoader
  * </ul>
  *
  * @author  Daniel Ellermann
- * @version 0.9.0
+ * @author  David Estes
+ * @version 1.0
  */
 class I18nProcessor extends AbstractProcessor {
 

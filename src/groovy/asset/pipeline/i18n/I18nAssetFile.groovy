@@ -30,7 +30,8 @@ import java.util.regex.Pattern
  * keys to localized messages.
  *
  * @author  Daniel Ellermann
- * @version 0.9.0
+ * @author  David Estes
+ * @version 1.0
  */
 class I18nAssetFile extends AbstractAssetFile {
 
@@ -43,8 +44,9 @@ class I18nAssetFile extends AbstractAssetFile {
     static final String compiledExtension = 'js'
     static processors = [I18nProcessor]
     Pattern directivePattern = ~/(?m)#=(.*)/
-    //-- Public methods -------------------------
 
+
+    //-- Public methods -------------------------
 
     @Override
     String processedStream(AssetCompiler precompiler) {
@@ -52,7 +54,9 @@ class I18nAssetFile extends AbstractAssetFile {
 
         String fileText
         if(baseFile?.encoding || encoding) {
-            fileText = inputStream?.getText(baseFile?.encoding ? baseFile.encoding : encoding)
+            fileText = inputStream?.getText(
+                baseFile?.encoding ? baseFile.encoding : encoding
+            )
         } else {
             fileText = inputStream?.text
         }
@@ -61,9 +65,7 @@ class I18nAssetFile extends AbstractAssetFile {
 
         def md5 = AssetHelper.getByteDigest(fileText.bytes)
         if (!skipCache) {
-            def cache = CacheManager.findCache(
-                path, md5, baseFile?.path
-            )
+            def cache = CacheManager.findCache(path, md5, baseFile?.path)
             if (cache) {
                 return cache
             }
@@ -75,10 +77,7 @@ class I18nAssetFile extends AbstractAssetFile {
         }
 
         if (!skipCache) {
-            CacheManager.createCache(
-                path, md5, fileText,
-                baseFile?.path
-            )
+            CacheManager.createCache(path, md5, fileText, baseFile?.path)
         }
 
         fileText

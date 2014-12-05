@@ -8,6 +8,15 @@ client-side i18n.
 For more information on how to use asset-pipeline, visit
 [asset-pipeline project page][asset-pipeline].
 
+Version information
+-------------------
+
+Because `asset-pipeline` 2.0.0 introduced a new API and isn't backward
+compatible, you must use the following versions of this plugin:
+
+* for `asset-pipeline` up to version 1.9.9 use version 0.9.0 of this plugin
+* for `asset-pipeline` version 2.0.0 or higher use version 1.0.0 of this plugin
+
 Usage
 -----
 
@@ -75,7 +84,6 @@ To DRY, add a file `_messages.i18n` to `grails-app/assets/javascripts`:
 # List of message codes that should be available on client-side.
 #
 
-
 # Add your messages codes here:
 default.btn.cancel
 default.btn.ok
@@ -114,7 +122,7 @@ Examples:
 ```
 
 ```html
-<asset:i18n locale="${locale}" />
+<asset:i18n name="texts" locale="${locale}" />
 ```
 
 Author

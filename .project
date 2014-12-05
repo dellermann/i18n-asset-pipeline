@@ -20,7 +20,7 @@
 		<link>
 			<name>.link_to_grails_plugins</name>
 			<type>2</type>
-			<locationURI>GRAILS_ROOT/2.4.3/projects/I18nAssetPipeline/plugins</locationURI>
+			<location>/home/dellermann/projects/i18n-asset-pipeline/target/plugins</location>
 		</link>
 	</linkedResources>
 </projectDescription>

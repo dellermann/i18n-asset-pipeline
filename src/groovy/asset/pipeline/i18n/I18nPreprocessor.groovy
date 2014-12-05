@@ -19,8 +19,8 @@
 
 package asset.pipeline.i18n
 
-import asset.pipeline.AssetHelper
 import asset.pipeline.AssetFile
+import asset.pipeline.AssetHelper
 import groovy.transform.CompileStatic
 import java.util.regex.Matcher
 import java.util.regex.Pattern
@@ -31,7 +31,8 @@ import java.util.regex.Pattern
  * which are used in the asset pipeline.
  *
  * @author  Daniel Ellermann
- * @version 0.9.0
+ * @author  David Estes
+ * @version 1.0
  */
 @CompileStatic
 class I18nPreprocessor {
@@ -79,8 +80,11 @@ class I18nPreprocessor {
      * Pre-processes an i18n file by removing empty lines and comment lines and
      * resolving all imports.
      *
-     * @param input the content of the i18n file
-     * @return      the pre-processed content
+     * @param input         the content of the i18n file
+     * @param fileHistory   the history of all import files that have been
+     *                      processed already; this is needed to handle
+     *                      circular dependencies
+     * @return              the pre-processed content
      */
     protected String preprocess(String input, Set<AssetFile> fileHistory) {
         StringBuffer buf = new StringBuffer(input.length())
@@ -102,15 +106,21 @@ class I18nPreprocessor {
     /**
      * Loads the import file with the file name and processes its content.
      *
-     * @param fileName  the name of the import file
-     * @return          the pre-processed content of the import file
+     * @param fileName      the name of the import file
+     * @param fileHistory   the history of all import files that have been
+     *                      processed already; this is needed to handle
+     *                      circular dependencies
+     * @return              the pre-processed content of the import file
      */
-    protected String resolveImport(String fileName, Set<AssetFile> fileHistory) {
+    protected String resolveImport(String fileName,
+                                   Set<AssetFile> fileHistory)
+    {
         if (!fileName.endsWith('.i18n')) {
             fileName += '.i18n'
         }
 
-        AssetFile importFile = (AssetFile) AssetHelper.fileForFullName(fileName)
+        AssetFile importFile =
+            (AssetFile) AssetHelper.fileForFullName(fileName)
         if (importFile == null || importFile in fileHistory) {
             return ''
         }
