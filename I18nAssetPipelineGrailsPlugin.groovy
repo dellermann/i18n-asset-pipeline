@@ -42,8 +42,4 @@ class I18nAssetPipelineGrailsPlugin {
     def pluginExcludes = [
         'grails-app/views/error.gsp'
     ]
-
-    def doWithDynamicMethods = { ctx ->
-        AssetHelper.assetSpecs << I18nAssetFile
-    }
 }

@@ -87,9 +87,9 @@ class I18nProcessor extends AbstractProcessor {
 
     @Override
     @CompileStatic
-    Object process(Object inputText, Object assetFile) {
+    String process(String inputText, AssetFile assetFile) {
         AssetFile f = (AssetFile) assetFile
-        Matcher m = f.file.name =~ /._(\w+)\.i18n$/
+        Matcher m = f.name =~ /._(\w+)\.i18n$/
         StringBuilder buf = new StringBuilder('grails-app/i18n/messages')
         if (m) buf << '_' << m.group(1)
 
