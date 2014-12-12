@@ -74,9 +74,7 @@ class I18nTagLib {
                 buf << '_' << parts[j]
             }
             String s = buf.toString()
-            def f = AssetHelper.fileForUri(
-                s.toString(), 'application/javascript'
-            )
+            AssetFile f = AssetHelper.fileForUri(s, 'application/javascript')
             if (f != null) {
                 src = s
             }

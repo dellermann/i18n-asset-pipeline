@@ -23,7 +23,9 @@ import asset.pipeline.AbstractAssetFile
 import asset.pipeline.AssetCompiler
 import asset.pipeline.AssetHelper
 import asset.pipeline.CacheManager
+import asset.pipeline.Processor
 import java.util.regex.Pattern
+
 
 /**
  * The class {@code I18nAssetFile} represents an asset file which converts code
@@ -37,12 +39,12 @@ class I18nAssetFile extends AbstractAssetFile {
 
     //-- Class variables ------------------------
 
-    static final contentType = [
+    static final String compiledExtension = 'js'
+    static final List<String> contentType = [
         'application/javascript', 'application/x-javascript', 'text/javascript'
     ]
-    static extensions = ['i18n']
-    static final String compiledExtension = 'js'
-    static processors = [I18nProcessor]
+    static List<String> extensions = ['i18n']
+    static List<Class<Processor>> processors = [I18nProcessor]
     Pattern directivePattern = ~/(?m)#=(.*)/
 
 
