@@ -45,6 +45,10 @@ class I18nAssetFile extends AbstractAssetFile {
     ]
     static List<String> extensions = ['i18n']
     static List<Class<Processor>> processors = [I18nProcessor]
+
+
+    //-- Instance variables ---------------------
+
     Pattern directivePattern = ~/(?m)#=(.*)/
 
 
