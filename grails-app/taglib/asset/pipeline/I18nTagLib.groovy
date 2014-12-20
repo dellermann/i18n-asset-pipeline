@@ -20,6 +20,7 @@
 package asset.pipeline
 
 import org.codehaus.groovy.grails.commons.GrailsApplication
+import org.springframework.core.io.Resource
 
 
 class I18nTagLib {
@@ -56,6 +57,9 @@ class I18nTagLib {
             }
         }
         locale = locale.replace('-', '_')
+        if (log.debugEnabled) {
+            log.debug "Retrieving i18n messages for locale ${locale}…"
+        }
 
         String name = attrs.remove('name') ?: 'messages'
         String [] parts = locale.split('_')
@@ -67,12 +71,31 @@ class I18nTagLib {
                 buf << '_' << parts[j]
             }
             String s = buf.toString()
-            def f = AssetHelper.fileForUri(
-                s.toString(), 'application/javascript'
-            )
-            if (f != null) {
-                src = s
+            if (log.debugEnabled) {
+                log.debug "Trying to find asset ${s}…"
             }
+
+            /*
+             * XXX This is a somewhat dirty hack.  When running in WAR file a
+             * filter (asset.pipeline.AssetPipelineFilter) looks for a resource
+             * in folder "assets".  So we try this first, and, if not found, we
+             * look in "grails-app/assets" via fileForUri().
+             */
+            Resource res =
+                grailsApplication.mainContext.getResource("assets/${s}.js")
+            if (res.exists()) {
+                src = s
+                break
+            } else {
+                def f = AssetHelper.fileForUri(s, 'application/javascript')
+                if (f != null) {
+                    src = s
+                    break
+                }
+            }
+        }
+        if (log.debugEnabled) {
+            log.debug "Found asset ${src ?: name}"
         }
 
         out << asset.javascript(src: src ?: name)

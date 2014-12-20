@@ -22,7 +22,7 @@ import asset.pipeline.i18n.I18nAssetFile
 
 
 class I18nAssetPipelineGrailsPlugin {
-    def version = '0.9.0'
+    def version = '0.9.1'
     def grailsVersion = '2.2 > *'
     def title = 'I18n Asset Pipeline Plugin'
     def author = 'Daniel Ellermann'

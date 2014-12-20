@@ -29,7 +29,7 @@ import asset.pipeline.CacheManager
  * keys to localized messages.
  *
  * @author  Daniel Ellermann
- * @version 0.9.0
+ * @version 0.9
  */
 class I18nAssetFile extends AbstractAssetFile {
 
