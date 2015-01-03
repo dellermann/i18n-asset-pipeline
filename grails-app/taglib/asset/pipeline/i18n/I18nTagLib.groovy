@@ -1,7 +1,7 @@
 /*
  * I18nTagLib.groovy
  *
- * Copyright (c) 2014, Daniel Ellermann
+ * Copyright (c) 2014-2015, Daniel Ellermann
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,10 @@
  */
 
 
-package asset.pipeline
+package asset.pipeline.i18n
 
+import asset.pipeline.AssetFile
+import asset.pipeline.AssetHelper
 import org.codehaus.groovy.grails.commons.GrailsApplication
 
 
