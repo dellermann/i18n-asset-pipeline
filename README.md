@@ -14,8 +14,9 @@ Version information
 Because `asset-pipeline` 2.0.0 introduced a new API and isn't backward
 compatible, you must use the following versions of this plugin:
 
-* for `asset-pipeline` up to version 1.9.9 use version 0.9.0 of this plugin
-* for `asset-pipeline` version 2.0.0 or higher use version 1.0.0 of this plugin
+* for `asset-pipeline` up to version 1.9.9 use version 0.9.x of this plugin
+* for `asset-pipeline` version 2.0.0 or higher use version 1.0.0 or higher of
+  this plugin
 
 Usage
 -----
