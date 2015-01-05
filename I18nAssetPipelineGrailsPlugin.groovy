@@ -18,13 +18,13 @@
 
 
 class I18nAssetPipelineGrailsPlugin {
-    def version = '1.0.1'
+    def version = '1.0.2'
     def grailsVersion = '2.2 > *'
     def title = 'I18n Asset Pipeline Plugin'
     def author = 'Daniel Ellermann'
     def authorEmail = 'd.ellermann@amc-world.de'
     def description = 'An asset-pipeline plugin for client-side i18n.  It generates JavaScript files from i18n resources for use in client-side code.'
-    def documentation = 'http://grails.org/plugin/i18n-asset-pipeline'
+    def documentation = 'https://github.com/dellermann/i18n-asset-pipeline'
     def license = 'APACHE'
     def organization = [
         name: 'AMC World Technologies GmbH',

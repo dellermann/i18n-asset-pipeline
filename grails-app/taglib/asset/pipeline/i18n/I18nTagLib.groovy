@@ -54,7 +54,7 @@ class I18nTagLib {
      * @attr [name] the name of the i18n file without extension; defaults to "messages"
      */
     def i18n = { attrs ->
-        def l = attrs.remove('locale')
+        def l = attrs.remove('locale') ?: ''
         String locale = ''
         if (l instanceof Locale) {
             locale = l.toString()
