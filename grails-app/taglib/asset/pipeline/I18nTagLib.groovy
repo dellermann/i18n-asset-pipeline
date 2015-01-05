@@ -1,7 +1,7 @@
 /*
  * I18nTagLib.groovy
  *
- * Copyright (c) 2014, Daniel Ellermann
+ * Copyright (c) 2014-2015, Daniel Ellermann
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ class I18nTagLib {
      * @attr [name] the name of the i18n file without extension; defaults to "messages"
      */
     def i18n = { attrs ->
-        def l = attrs.remove('locale')
+        def l = attrs.remove('locale') ?: ''
         String locale = ''
         if (l instanceof Locale) {
             locale = l.toString()
