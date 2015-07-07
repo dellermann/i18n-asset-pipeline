@@ -100,7 +100,10 @@ class I18nProcessor extends AbstractProcessor {
         Map<String, String> messages = [: ]
         inputText.toString()
             .eachLine {
-                if (it != '') messages.put it, props.getProperty(it, it)
+                String line = it.toString()
+                if (line != '') {
+                    messages.put line, props.getProperty(line, line)
+                }
             }
 
         compileJavaScript messages
