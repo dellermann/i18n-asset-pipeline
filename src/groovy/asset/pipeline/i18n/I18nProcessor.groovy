@@ -101,9 +101,12 @@ class I18nProcessor extends AbstractProcessor {
         inputText.toString()
             .eachLine {
                 String line = it.toString()
-                if (line != '') {
-                    messages.put line, props.getProperty(line, line)
+                def lineSplit = line?.split("=")
+                def messageAfterEqualCharacter = ""
+                for(def i = 1; i < lineSplit?.size(); i++) {
+                    messageAfterEqualCharacter += lineSplit[i]
                 }
+                if(line != '') messages.put lineSplit[0], messageAfterEqualCharacter
             }
 
         compileJavaScript messages
@@ -137,7 +140,7 @@ class I18nProcessor extends AbstractProcessor {
         buf << '''
     }
 
-    win.$L = function (code) {
+    window.$L = function (code) {
         return messages[code];
     }
 }(this));
