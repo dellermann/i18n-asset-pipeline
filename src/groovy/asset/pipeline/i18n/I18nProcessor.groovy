@@ -105,7 +105,7 @@ class I18nProcessor extends AbstractProcessor {
                 def messageAfterEqualCharacter = ""
                 for(def i = 1; i < lineSplit?.size(); i++) {
                     messageAfterEqualCharacter += lineSplit[i]
-                    if(lineSplit?.size != 2 && i != (lineSplit?.size() - 1)) messageAfterEqualCharacter += "="
+                    if(lineSplit?.size() != 2 && i != (lineSplit?.size() - 1)) messageAfterEqualCharacter += "="
                 }
                 if(line != '') messages.put lineSplit[0], messageAfterEqualCharacter
             }
