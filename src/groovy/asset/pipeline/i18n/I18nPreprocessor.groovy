@@ -1,7 +1,7 @@
 /*
  * I18nPreprocessor.groovy
  *
- * Copyright (c) 2014, Daniel Ellermann
+ * Copyright (c) 2014-2015, Daniel Ellermann
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ package asset.pipeline.i18n
 
 import asset.pipeline.AssetFile
 import asset.pipeline.AssetHelper
-import groovy.transform.CompileStatic
+import groovy.transform.TypeChecked
 import java.util.regex.Matcher
 import java.util.regex.Pattern
 
@@ -34,7 +34,7 @@ import java.util.regex.Pattern
  * @author  David Estes
  * @version 1.0
  */
-@CompileStatic
+@TypeChecked
 class I18nPreprocessor {
 
     //-- Constants ------------------------------
@@ -96,6 +96,7 @@ class I18nPreprocessor {
             if (m) {
                 line = resolveImport(m.group(1).trim(), fileHistory)
                 if (!line) return
+                line = line.trim()
             }
             buf << line << '\n'
         }

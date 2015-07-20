@@ -1,7 +1,7 @@
 /*
  * I18nProcessor.groovy
  *
- * Copyright (c) 2014, Daniel Ellermann
+ * Copyright (c) 2014-2015, Daniel Ellermann
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,7 +66,7 @@ class I18nProcessor extends AbstractProcessor {
 
     //-- Instance variables ---------------------
 
-    protected ResourceLoader resourceLoader = new DefaultResourceLoader()
+    ResourceLoader resourceLoader = new DefaultResourceLoader()
 
 
     //-- Constructors ---------------------------
@@ -91,28 +91,14 @@ class I18nProcessor extends AbstractProcessor {
         Matcher m = f.name =~ /._(\w+)\.i18n$/
         StringBuilder buf = new StringBuilder('grails-app/i18n/messages')
         if (m) buf << '_' << m.group(1)
-
-        Resource res = locateResource(buf.toString())
-        Properties props = new Properties()
-        props.load res.inputStream
+        Properties props = loadMessages(buf.toString())
 
         // At this point, inputText has been pre-processed (I18nPreprocessor).
         Map<String, String> messages = [: ]
         inputText.toString()
-            .eachLine {
-                String line = it.toString()
-                def lineSplit = line?.split('=')
-                def messageAfterEqualCharacter = ''
-                for (int i = 1; i < lineSplit?.size(); i++) {
-                    messageAfterEqualCharacter += lineSplit[i]
-                    if (lineSplit?.size() != 2 &&
-                        i != (lineSplit?.size() - 1))
-                    {
-                      messageAfterEqualCharacter += '='
-                    }
-                }
+            .eachLine { String line ->
                 if (line != '') {
-                  messages.put lineSplit[0], messageAfterEqualCharacter
+                    messages.put line, props.getProperty(line, line)
                 }
             }
 
@@ -153,6 +139,23 @@ class I18nProcessor extends AbstractProcessor {
 }(this));
 '''
         buf.toString()
+    }
+
+    /**
+     * Loads the message resources from the given file.
+     *
+     * @param fileName                  the given base file name
+     * @return                          the read message resources
+     * @throws FileNotFoundException    if no resource with the required
+     *                                  localized messages exists
+     */
+    @CompileStatic
+    protected Properties loadMessages(String fileName) {
+        Resource res = locateResource(fileName)
+        Properties props = new Properties()
+        props.load res.inputStream
+
+        props
     }
 
     /**
