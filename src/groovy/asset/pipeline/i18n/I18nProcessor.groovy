@@ -77,7 +77,7 @@ class I18nProcessor extends AbstractProcessor {
      *
      * @param precompiler   the given asset pre-compiler
      */
-    I18nProcessor(AssetCompiler precompiler){
+    I18nProcessor(AssetCompiler precompiler) {
         super(precompiler)
     }
 
@@ -101,13 +101,19 @@ class I18nProcessor extends AbstractProcessor {
         inputText.toString()
             .eachLine {
                 String line = it.toString()
-                def lineSplit = line?.split("=")
-                def messageAfterEqualCharacter = ""
-                for(def i = 1; i < lineSplit?.size(); i++) {
+                def lineSplit = line?.split('=')
+                def messageAfterEqualCharacter = ''
+                for (int i = 1; i < lineSplit?.size(); i++) {
                     messageAfterEqualCharacter += lineSplit[i]
-                    if(lineSplit?.size() != 2 && i != (lineSplit?.size() - 1)) messageAfterEqualCharacter += "="
+                    if (lineSplit?.size() != 2 &&
+                        i != (lineSplit?.size() - 1))
+                    {
+                      messageAfterEqualCharacter += '='
+                    }
                 }
-                if(line != '') messages.put lineSplit[0], messageAfterEqualCharacter
+                if (line != '') {
+                  messages.put lineSplit[0], messageAfterEqualCharacter
+                }
             }
 
         compileJavaScript messages
@@ -141,7 +147,7 @@ class I18nProcessor extends AbstractProcessor {
         buf << '''
     }
 
-    window.$L = function (code) {
+    win.$L = function (code) {
         return messages[code];
     }
 }(this));

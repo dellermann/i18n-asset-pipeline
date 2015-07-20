@@ -18,7 +18,7 @@
 
 
 class I18nAssetPipelineGrailsPlugin {
-    def version = '1.0.3'
+    def version = '1.0.4'
     def grailsVersion = '2.2 > *'
     def title = 'I18n Asset Pipeline Plugin'
     def author = 'Daniel Ellermann'
