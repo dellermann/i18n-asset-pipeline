@@ -145,7 +145,7 @@ special.crlf''',
 ''')
         buf << messages
         buf << '''
-    }
+    };
 
     win.$L = function (code) {
         return messages[code];

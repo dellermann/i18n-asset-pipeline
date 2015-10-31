@@ -116,9 +116,7 @@ class I18nProcessor extends AbstractProcessor {
      */
     @CompileStatic
     protected String compileJavaScript(Map<String, String> messages) {
-        StringBuilder buf = new StringBuilder('''(function (win) {
-    var messages = {
-''')
+        StringBuilder buf = new StringBuilder()
         int i = 0
         for (Map.Entry<String, String> entry in messages.entrySet()) {
             if (i++ > 0) {
@@ -130,15 +128,7 @@ class I18nProcessor extends AbstractProcessor {
                 .replace('"', '\\"')
             buf << '        "' << entry.key << '": "' << value << '"'
         }
-        buf << '''
-    }
-
-    win.$L = function (code) {
-        return messages[code];
-    }
-}(this));
-'''
-        buf.toString()
+        getClass().getResource('/resources/messages.js').text.replace('/*MESSAGES*/', buf.toString())
     }
 
     /**
