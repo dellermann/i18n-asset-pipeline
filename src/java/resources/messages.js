@@ -4,6 +4,11 @@
     };
 
     win.$L = function (code) {
-        return messages[code];
+        var message = messages[code];
+        if(message === undefined) {
+            return "[" + code + "]";
+        } else {
+            return message;
+        }
     }
 }(this));
