@@ -28,6 +28,8 @@ import org.springframework.core.io.DefaultResourceLoader
 import org.springframework.core.io.Resource
 import org.springframework.core.io.ResourceLoader
 
+import java.util.regex.Pattern
+
 
 /**
  * The class {@code I18nProcessor} represents an asset processor which converts
@@ -116,6 +118,8 @@ class I18nProcessor extends AbstractProcessor {
      */
     @CompileStatic
     protected String compileJavaScript(Map<String, String> messages) {
+        Pattern pattern = Pattern.compile(/\{(\d{1,2})}/)
+        Pattern split = Pattern.compile(/((?<=(\{\d{1,2}}))|(?=(\{\d{1,2}})))/)
         StringBuilder buf = new StringBuilder()
         int i = 0
         for (Map.Entry<String, String> entry in messages.entrySet()) {
@@ -126,7 +130,19 @@ class I18nProcessor extends AbstractProcessor {
                 .replace('\\', '\\\\')
                 .replace('\n', '\\n')
                 .replace('"', '\\"')
-            buf << '        "' << entry.key << '": "' << value << '"'
+            if(value.find(pattern)) {
+                List<String> x = split.split(value).collect { String part ->
+                    Matcher matcher = pattern.matcher(part)
+                    if (matcher.find()) {
+                        return matcher.group(1)
+                    } else {
+                        return '"' + part + '"'
+                    }
+                }
+                buf << '        "' << entry.key << '": [' << x.join(", ") << ']'
+            } else {
+                buf << '        "' << entry.key << '": "' << value << '"'
+            }
         }
         getClass().getResource('/resources/messages.js').text.replace('/*MESSAGES*/', buf.toString())
     }

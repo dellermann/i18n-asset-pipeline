@@ -35,6 +35,19 @@ which can be called to obtain the localized message by a given code, e. g.:
 $(".btn").text($L("default.btn.ok"));
 ```
 
+If you have a message with a placeholder, you can give the value to apply as an additional argument:
+
+```javascript
+$(".message").text($L("flash.message", "21"));
+```
+
+With multiple placeholders, you can give your values either as single arguments or as an array:
+
+```javascript
+$(".message").text($L("flash.message", "foo", "21"));
+$(".message").text($L("flash.message", ["foo", "21"]));
+```
+
 I18n file syntax
 ----------------
 

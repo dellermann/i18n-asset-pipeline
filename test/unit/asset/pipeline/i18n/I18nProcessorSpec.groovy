@@ -40,6 +40,13 @@ special.backslash = Test \\\\{0\\\\}
 special.crlf = This is\\n\\
         a test.
 special.quotationMarks = This is a "test".
+format.1 = {0}
+format.2 = {0}{1}{2}
+format.4 = {2} {1} {0}
+test.b= 0 {0}
+test.c= {0} 0
+format.3 = {1}
+format.7 = {}
 '''
 
 
@@ -136,7 +143,30 @@ special.crlf''',
             ) == res
     }
 
+    def 'String subst 1'() {
+        when: 'I process an i18n file containing xxxxxxxx'
+        String res = processor.process(
+            '''format.1
+format.2
+format.4
+test.b
+test.c
+format.3
+format.7''',
+            assetFile
+        )
 
+        then:
+        getJavaScriptCode(
+            '''        "format.1": [0],
+        "format.2": [0, 1, 2],
+        "format.4": [2, " ", 1, " ", 0],
+        "test.b": ["0 ", 0],
+        "test.c": [0, " 0"],
+        "format.3": [1],
+        "format.7": "{}"'''
+            ) == res
+    }
     //-- Non-public methods ---------------------
 
     String getJavaScriptCode(String messages) {
@@ -151,6 +181,23 @@ special.crlf''',
         var message = messages[code];
         if(message === undefined) {
             return "[" + code + "]";
+        } else if(message instanceof Array) {
+            var params;
+            if (arguments.length === 2 && (arguments[1]) instanceof Array) {
+                params = arguments[1];
+            } else {
+                params = Array.prototype.slice.call(arguments);
+                params.shift();
+            }
+            var result = "";
+            for(var i = 0; i < message.length; i++) {
+                if(typeof message[i] === "number") {
+                    result += params[message[i]];
+                } else {
+                    result += message[i];
+                }
+            }
+            return result;
         } else {
             return message;
         }
