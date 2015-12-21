@@ -96,11 +96,19 @@ class I18nTagLib {
                 src = s
                 break
             } else {
-                AssetFile f =
-                    AssetHelper.fileForUri(s, 'application/javascript')
-                if (f != null) {
+                res = grailsApplication.mainContext.getResource(
+                    "assets/${s}.unminified.js"
+                )
+                if (res.exists()) {
                     src = s
                     break
+                } else {
+                    AssetFile f =
+                        AssetHelper.fileForUri(s, 'application/javascript')
+                    if (f != null) {
+                        src = s
+                        break
+                    }
                 }
             }
         }
