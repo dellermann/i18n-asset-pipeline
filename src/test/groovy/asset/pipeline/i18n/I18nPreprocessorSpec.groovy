@@ -26,7 +26,7 @@ import spock.lang.Specification
 
 class I18nPreprocessorSpec extends Specification {
 
-    //-- Instance variables ---------------------
+    //-- Fields ---------------------------------
 
     I18nPreprocessor preprocessor = I18nPreprocessor.instance
 
@@ -49,7 +49,8 @@ class I18nPreprocessorSpec extends Specification {
                 '/foo/bar/b.i18n', 'b1\n@import a\nb2\nb3'
             ),
         ]
-        AssetHelper.metaClass.'static'.fileForFullName = { String fileName ->
+        AssetHelper.metaClass.'static'.fileForUri = { String fileName ->
+            println "load file ${fileName}"
             files[fileName]
         }
     }
@@ -216,8 +217,8 @@ foo.foo
 
     def 'Circular imports dependencies are handled correctly'() {
         given: 'an asset file'
-        def a = AssetHelper.fileForFullName('a.i18n')
-        def b = AssetHelper.fileForFullName('b.i18n')
+        def a = AssetHelper.fileForUri('a.i18n')
+        def b = AssetHelper.fileForUri('b.i18n')
 
         when: 'I preprocess the file'
         String res = preprocessor.preprocess(a)

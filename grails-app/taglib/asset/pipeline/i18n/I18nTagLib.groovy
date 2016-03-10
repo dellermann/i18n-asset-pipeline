@@ -1,7 +1,7 @@
 /*
  * I18nTagLib.groovy
  *
- * Copyright (c) 2014-2015, Daniel Ellermann
+ * Copyright (c) 2014-2016, Daniel Ellermann
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,14 @@
 
 package asset.pipeline.i18n
 
+import asset.pipeline.AssetPipelineConfigHolder
 import asset.pipeline.AssetFile
 import asset.pipeline.AssetHelper
-import org.codehaus.groovy.grails.commons.GrailsApplication
+import asset.pipeline.grails.AssetProcessorService
+import grails.artefact.TagLibrary
+import grails.core.GrailsApplication
+import groovy.transform.CompileStatic
+import org.springframework.context.ApplicationContext
 import org.springframework.core.io.Resource
 
 
@@ -30,18 +35,18 @@ import org.springframework.core.io.Resource
  * files.
  *
  * @author  Daniel Ellermann
- * @version 1.0
+ * @version 3.0
  */
-class I18nTagLib {
+class I18nTagLib implements TagLibrary {
 
-    //-- Class variables ------------------------
+    //-- Class fields ---------------------------
 
-    static namespace = "asset"
+    static namespace = 'asset'
 
 
-    //-- Instance variables ---------------------
+    //-- Fields ---------------------------------
 
-    GrailsApplication grailsApplication
+    AssetProcessorService assetProcessorService
 
 
     //-- Public methods -------------------------
@@ -54,16 +59,16 @@ class I18nTagLib {
      * @attr [name] the name of the i18n file without extension; defaults to "messages"
      */
     def i18n = { attrs ->
+        Properties manifest = AssetPipelineConfigHolder.manifest
+        ApplicationContext ctx = grailsApplication.mainContext
+        String mapping = assetProcessorService.assetMapping
+
         def l = attrs.remove('locale') ?: ''
         String locale = ''
-        if (l instanceof Locale) {
+        if (l instanceof Locale || l instanceof CharSequence) {
             locale = l.toString()
-        } else if (l instanceof CharSequence) {
-            locale = l
-        } else {
-            if (log.warnEnabled) {
-                log.warn "Unknown type ${l.class.name} for attribute 'locale'; use default locale."
-            }
+        } else if (log.warnEnabled) {
+            log.warn "Unknown type ${l.class.name} for attribute 'locale'; use default locale."
         }
         locale = locale.replace('-', '_')
         if (log.debugEnabled) {
@@ -79,44 +84,39 @@ class I18nTagLib {
             for (int j = 0; j <= i; j++) {
                 buf << '_' << parts[j]
             }
-            String s = buf.toString()
+            buf << '.js'
+            String assetName = buf.toString()
             if (log.debugEnabled) {
-                log.debug "Trying to find asset ${s}…"
+                log.debug "Trying to find asset ${assetName}…"
             }
 
-            /*
-             * XXX This is a somewhat dirty hack.  When running in WAR file a
-             * filter (asset.pipeline.AssetPipelineFilter) looks for a resource
-             * in folder "assets".  So we try this first, and, if not found, we
-             * look in "grails-app/assets" via fileForUri().
-             */
-            Resource res =
-                grailsApplication.mainContext.getResource("assets/${s}.js")
-            if (res.exists()) {
-                src = s
-                break
-            } else {
-                res = grailsApplication.mainContext.getResource(
-                    "assets/${s}.unminified.js"
-                )
-                if (res.exists()) {
-                    src = s
+            if (manifest) {
+    			String fileUri = manifest?.getProperty(assetName, assetName)
+                Resource file = ctx.getResource("assets/${fileUri}")
+				if (!file.exists()) {
+					file = ctx.getResource("classpath:assets/${fileUri}")
+				}
+                if (file.exists()) {
+                    src = assetName
                     break
-                } else {
-                    AssetFile f =
-                        AssetHelper.fileForUri(s, 'application/javascript')
-                    if (f != null) {
-                        src = s
-                        break
-                    }
+                }
+            } else {
+                AssetFile file =
+                    AssetHelper.fileForUri(assetName, 'application/javascript')
+                if (file != null) {
+                    src = assetName
+                    break
                 }
             }
         }
         if (log.debugEnabled) {
-            log.debug "Found asset ${src ?: name}"
+            if (src != null) {
+                log.debug "Found asset '${src}'."
+            } else {
+                log.debug "Localized asset not found - using default asset '${name}.js'"
+            }
         }
 
-        out << asset.javascript(src: src ?: name)
+        out << asset.javascript(src: src ?: (name + '.js'))
     }
 }
-

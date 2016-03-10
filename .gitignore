@@ -1,6 +1,9 @@
+/.classpath
+/.gradle
+/.project
 /.settings
 /*.zip
 /*.zip.sha1
+/build
 /plugin.xml
-/target/
-/web-app/WEB-INF/
+/web-app/WEB-INF

@@ -1,7 +1,7 @@
 /*
  * I18nAssetFile.groovy
  *
- * Copyright (c) 2014-2015, Daniel Ellermann
+ * Copyright (c) 2014-2016, Daniel Ellermann
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,11 +33,11 @@ import java.util.regex.Pattern
  *
  * @author  Daniel Ellermann
  * @author  David Estes
- * @version 1.0
+ * @version 3.0
  */
 class I18nAssetFile extends AbstractAssetFile {
 
-    //-- Class variables ------------------------
+    //-- Class fields ---------------------------
 
     static final String compiledExtension = 'js'
     static final List<String> contentType = [
@@ -47,7 +47,7 @@ class I18nAssetFile extends AbstractAssetFile {
     static List<Class<Processor>> processors = [I18nProcessor]
 
 
-    //-- Instance variables ---------------------
+    //-- Fields ---------------------------------
 
     Pattern directivePattern = ~/(?m)#=(.*)/
 
@@ -89,4 +89,3 @@ class I18nAssetFile extends AbstractAssetFile {
         fileText
     }
 }
-

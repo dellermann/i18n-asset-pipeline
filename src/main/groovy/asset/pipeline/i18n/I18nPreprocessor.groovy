@@ -1,7 +1,7 @@
 /*
  * I18nPreprocessor.groovy
  *
- * Copyright (c) 2014-2015, Daniel Ellermann
+ * Copyright (c) 2014-2016, Daniel Ellermann
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,10 +29,14 @@ import java.util.regex.Pattern
 /**
  * The class {@code I18nPreprocessor} represents a pre-processor for i18n files
  * which are used in the asset pipeline.
+ * <p>
+ * Implementation notes: this class must be compiled with {@code @TypeChecked}
+ * not {@code CompileStatic} because the unit test {@code I18nPreprocessorSpec}
+ * mocks the static method {@code AssetFile.fileForUri} with meta class.
  *
  * @author  Daniel Ellermann
  * @author  David Estes
- * @version 1.0
+ * @version 3.0
  */
 @TypeChecked
 class I18nPreprocessor {
@@ -67,10 +71,15 @@ class I18nPreprocessor {
      * @param input the content of the i18n file
      * @return      the pre-processed content
      */
-    String preprocess(AssetFile file, String input = file.inputStream.text) {
+    String preprocess(AssetFile file, String input = file?.inputStream?.text) {
+        if (!input) {
+            return ''
+        }
+
         Set<AssetFile> fileHistory = new HashSet<>()
         fileHistory << file
-        preprocess input, fileHistory
+
+        doPreprocess input, fileHistory
     }
 
 
@@ -86,7 +95,7 @@ class I18nPreprocessor {
      *                      circular dependencies
      * @return              the pre-processed content
      */
-    protected String preprocess(String input, Set<AssetFile> fileHistory) {
+    private String doPreprocess(String input, Set<AssetFile> fileHistory) {
         StringBuffer buf = new StringBuffer(input.length())
         input.eachLine { String line ->
             line = line.trim()
@@ -113,21 +122,18 @@ class I18nPreprocessor {
      *                      circular dependencies
      * @return              the pre-processed content of the import file
      */
-    protected String resolveImport(String fileName,
-                                   Set<AssetFile> fileHistory)
-    {
+    private String resolveImport(String fileName, Set<AssetFile> fileHistory) {
         if (!fileName.endsWith('.i18n')) {
             fileName += '.i18n'
         }
 
-        AssetFile importFile =
-            (AssetFile) AssetHelper.fileForFullName(fileName)
+        AssetFile importFile = AssetHelper.fileForUri(fileName)
         if (importFile == null || importFile in fileHistory) {
             return ''
         }
 
         fileHistory << importFile
-        preprocess importFile.inputStream.text, fileHistory
+        doPreprocess importFile.inputStream.text, fileHistory
     }
 
 

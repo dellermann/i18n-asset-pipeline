@@ -1,7 +1,7 @@
 /*
  * I18nAssetPipelineGrailsPlugin.groovy
  *
- * Copyright (c) 2014-2015, Daniel Ellermann
+ * Copyright (c) 2014-2016, Daniel Ellermann
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,18 @@
  */
 
 
-class I18nAssetPipelineGrailsPlugin {
-    def version = '1.0.6'
-    def grailsVersion = '2.2 > *'
+package asset.pipeline.i18n
+
+import grails.plugins.*
+
+
+class I18nAssetPipelineGrailsPlugin extends Plugin {
+
+    //-- Fields ---------------------------------
+
+    def version = '3.0.0'
+    def grailsVersion = '3.0.0 > *'
+    def profiles = ['web']
     def title = 'I18n Asset Pipeline Plugin'
     def author = 'Daniel Ellermann'
     def authorEmail = 'd.ellermann@amc-world.de'
@@ -38,4 +47,36 @@ class I18nAssetPipelineGrailsPlugin {
     def pluginExcludes = [
         'grails-app/views/error.gsp'
     ]
+
+
+    //-- Public methods -------------------------
+
+    Closure doWithSpring() {
+        { ->
+            // TODO Implement runtime spring config (optional)
+        }
+    }
+
+    void doWithDynamicMethods() {
+        // TODO Implement registering dynamic methods to classes (optional)
+    }
+
+    void doWithApplicationContext() {
+        // TODO Implement post initialization spring config (optional)
+    }
+
+    void onChange(Map<String, Object> event) {
+        // TODO Implement code that is executed when any artefact that this plugin is
+        // watching is modified and reloaded. The event contains: event.source,
+        // event.application, event.manager, event.ctx, and event.plugin.
+    }
+
+    void onConfigChange(Map<String, Object> event) {
+        // TODO Implement code that is executed when the project configuration changes.
+        // The event is the same as for 'onChange'.
+    }
+
+    void onShutdown(Map<String, Object> event) {
+        // TODO Implement code that is executed when the application shuts down (optional)
+    }
 }
