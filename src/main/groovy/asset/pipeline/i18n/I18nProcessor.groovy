@@ -1,7 +1,7 @@
 /*
  * I18nProcessor.groovy
  *
- * Copyright (c) 2014-2015, Daniel Ellermann
+ * Copyright (c) 2014-2016, Daniel Ellermann
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,8 +54,9 @@ import org.springframework.core.io.ResourceLoader
  *
  * @author  Daniel Ellermann
  * @author  David Estes
- * @version 1.0
+ * @version 3.0
  */
+@CompileStatic
 class I18nProcessor extends AbstractProcessor {
 
     //-- Constants ------------------------------
@@ -64,7 +65,7 @@ class I18nProcessor extends AbstractProcessor {
     protected static final String XML_SUFFIX = '.xml'
 
 
-    //-- Instance variables ---------------------
+    //-- Fields ---------------------------------
 
     ResourceLoader resourceLoader = new DefaultResourceLoader()
 
@@ -85,11 +86,9 @@ class I18nProcessor extends AbstractProcessor {
     //-- Public methods -------------------------
 
     @Override
-    @CompileStatic
     String process(String inputText, AssetFile assetFile) {
-        AssetFile f = (AssetFile) assetFile
-        Matcher m = f.name =~ /._(\w+)\.i18n$/
-        StringBuilder buf = new StringBuilder('grails-app/i18n/messages')
+        Matcher m = assetFile.name =~ /._(\w+)\.i18n$/
+        StringBuilder buf = new StringBuilder('messages')
         if (m) buf << '_' << m.group(1)
         Properties props = loadMessages(buf.toString())
 
@@ -114,8 +113,7 @@ class I18nProcessor extends AbstractProcessor {
      * @param messages  the given messages
      * @return          the compiled JavaScript code
      */
-    @CompileStatic
-    protected String compileJavaScript(Map<String, String> messages) {
+    private String compileJavaScript(Map<String, String> messages) {
         StringBuilder buf = new StringBuilder('''(function (win) {
     var messages = {
 ''')
@@ -149,8 +147,7 @@ class I18nProcessor extends AbstractProcessor {
      * @throws FileNotFoundException    if no resource with the required
      *                                  localized messages exists
      */
-    @CompileStatic
-    protected Properties loadMessages(String fileName) {
+    private Properties loadMessages(String fileName) {
         Resource res = locateResource(fileName)
         Properties props = new Properties()
         props.load res.inputStream
@@ -159,19 +156,37 @@ class I18nProcessor extends AbstractProcessor {
     }
 
     /**
-     * Locates the resource containing the localized messages.
+     * Locates the resource containing the localized messages.  The method looks
+     * in the following places:
+     * <ul>
+     *   <li>in classpath with extension {@code .properties}</li>
+     *   <li>in classpath with extension {@code .xml}</li>
+     *   <li>in file system in folder {@code grails-app/i18n} with extension
+     *   {@code .properties}</li>
+     *   <li>in file system in folder {@code grails-app/i18n} with extension
+     *   {@code .xml}</li>
+     * </ul>
      *
      * @param fileName                  the given base file name
      * @return                          the resource containing the messages
      * @throws FileNotFoundException    if no resource with the required
      *                                  localized messages exists
      */
-    @CompileStatic
-    protected Resource locateResource(String fileName) {
+    private Resource locateResource(String fileName) {
         Resource resource =
             resourceLoader.getResource(fileName + PROPERTIES_SUFFIX)
         if (!resource.exists()) {
             resource = resourceLoader.getResource(fileName + XML_SUFFIX)
+        }
+        if (!resource.exists()) {
+            resource = resourceLoader.getResource(
+                "file:grails-app/i18n/${fileName}${PROPERTIES_SUFFIX}"
+            )
+        }
+        if (!resource.exists()) {
+            resource = resourceLoader.getResource(
+                "file:grails-app/i18n/${fileName}${XML_SUFFIX}"
+            )
         }
         if (!resource.exists()) {
             throw new FileNotFoundException(

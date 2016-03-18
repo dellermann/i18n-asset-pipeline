@@ -1,7 +1,7 @@
 /*
  * I18nProcessorSpec.groovy
  *
- * Copyright (c) 2014-2015, Daniel Ellermann
+ * Copyright (c) 2014-2016, Daniel Ellermann
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ package asset.pipeline.i18n
 import asset.pipeline.AssetFile
 import asset.pipeline.GenericAssetFile
 import org.springframework.core.io.InputStreamResource
+import org.springframework.core.io.Resource
 import org.springframework.core.io.ResourceLoader
 import spock.lang.Specification
 
@@ -43,7 +44,7 @@ special.quotationMarks = This is a "test".
 '''
 
 
-    //-- Instance variables ---------------------
+    //-- Fields ---------------------------------
 
     AssetFile assetFile
     I18nProcessor processor
@@ -71,13 +72,20 @@ special.quotationMarks = This is a "test".
         given: 'an i18n processor'
         def processor = new I18nProcessor(null)
 
-        and: 'a mock that is called with a particular parameter'
-        processor.resourceLoader = Mock(ResourceLoader)
-        processor.resourceLoader.getResource(
-                'grails-app/i18n/messages_de.properties'
-            ) >> new InputStreamResource(
+        and: 'a mocked resource'
+        Resource nonExistantResource = Mock()
+        nonExistantResource.exists() >> false
+
+        and: 'a mocked resource loader'
+        ResourceLoader resourceLoader = Mock()
+        1 * resourceLoader.getResource('messages_de.properties') >> nonExistantResource
+        1 * resourceLoader.getResource('messages_de.xml') >> nonExistantResource
+        1 * resourceLoader.getResource('file:grails-app/i18n/messages_de.properties') >>
+            new InputStreamResource(
                 new ByteArrayInputStream(MESSAGES.bytes)
             )
+        0 * resourceLoader.getResource('file:grails-app/i18n/messages_de.xml')
+        processor.resourceLoader = resourceLoader
 
         and: 'a localized mock asset file'
         def assetFile = new GenericAssetFile(
@@ -139,7 +147,7 @@ special.crlf''',
 
     //-- Non-public methods ---------------------
 
-    String getJavaScriptCode(String messages) {
+    private String getJavaScriptCode(String messages) {
         StringBuilder buf = new StringBuilder('''(function (win) {
     var messages = {
 ''')

@@ -44,9 +44,6 @@ class I18nAssetPipelineGrailsPlugin extends Plugin {
         url: 'https://github.com/dellermann/i18n-asset-pipeline/issues'
     ]
     def scm = [url: 'https://github.com/dellermann/i18n-asset-pipeline']
-    def pluginExcludes = [
-        'grails-app/views/error.gsp'
-    ]
 
 
     //-- Public methods -------------------------

@@ -24,6 +24,7 @@ import asset.pipeline.AssetCompiler
 import asset.pipeline.AssetHelper
 import asset.pipeline.CacheManager
 import asset.pipeline.Processor
+import groovy.transform.CompileStatic
 import java.util.regex.Pattern
 
 
@@ -35,6 +36,7 @@ import java.util.regex.Pattern
  * @author  David Estes
  * @version 3.0
  */
+@CompileStatic
 class I18nAssetFile extends AbstractAssetFile {
 
     //-- Class fields ---------------------------

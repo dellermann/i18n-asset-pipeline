@@ -1,5 +1,4 @@
-I18n asset-pipeline plugin
-==========================
+# I18n asset-pipeline plugin
 
 The Grails plugin `i18n-asset-pipeline` is an asset-pipeline plugin that
 generates a JavaScript file with localized texts which can be used for
@@ -8,21 +7,42 @@ client-side i18n.
 For more information on how to use asset-pipeline, visit
 [asset-pipeline project page][asset-pipeline].
 
-Version information
--------------------
+## Version information
 
-Because `asset-pipeline` 2.0.0 introduced a new API and isn't backward
+Because `asset-pipeline` 2.x and 3.x introduced new APIs and aren't backward
 compatible, you must use the following versions of this plugin:
 
-* for `asset-pipeline` up to version 1.9.9 use version 0.9.x of this plugin
-* for `asset-pipeline` version 2.0.0 or higher use version 1.0.0 or higher of
-  this plugin
+i18n-asset-pipeline version | required for
+----------------------------|--------------
+ 0.x                        | `asset-pipeline` up to version 1.9.9
+ 1.x                        | `asset-pipeline` version 2.0.0 or higher
+ 2.x                        | Grails 3.x
 
-Usage
------
+## Installation
 
-`i18n-asset-pipeline` uses special files in your standard
-`grails-app/assets/javascripts` folder with extension '.i18n'.  The names of
+To use this plugin you have to add the following code to your `build.gradle`:
+
+```groovy
+buildscript {
+    dependencies {
+        classpath 'org.amcworld.plugins:i18n-asset-pipeline:2.0.0'
+    }
+}
+
+dependencies {
+    runtime 'org.grails.plugins:i18n-asset-pipeline:2.0.0'
+}
+```
+
+The first dependency declaration is needed to precompile your assets (e. g.
+when building a WAR file).  The second one provides the necessary
+`<asset:i18n>` tag and compiles the assets on the fly (e. g. in development)
+mode.
+
+## Usage
+
+`i18n-asset-pipeline` uses special files in your asset folders (we recommend
+`grails-app/assets/i18n`) with extension '.i18n'.  The names of
 these files must contain a language specification separated by underscore, e.
 g. `messages_de.i18n` or `messages_en_UK.i18n`.  Files without a language
 specification (e. g. `messages.i18n`) are files for the default locale.  These
@@ -35,8 +55,7 @@ which can be called to obtain the localized message by a given code, e. g.:
 $(".btn").text($L("default.btn.ok"));
 ```
 
-I18n file syntax
-----------------
+## I18n file syntax
 
 Each i18n file must be defined according to the following rules:
 
@@ -49,15 +68,15 @@ Each i18n file must be defined according to the following rules:
   import statements, even circular ones.  You may omit file extension `.i18n`
   in *`url`*.
 * All other lines are treated as messsage codes which are translated to the
-  required language.  Comments after message codes are not allowed.
+  required language.
+* Comments after import statements and message codes are not allowed.
 
 Each i18n file may contain asset-pipeline `require` statements to load other
 assets such as JavaScript files.  **ATTENTION!** Don't use `require` to load
 other i18n files because they will not be processed correctly.  Use the
 `@import` declaration instead.
 
-Typical file structure
-----------------------
+## Typical file structure
 
 Typically, you have one i18n file for each language in the application.  Given,
 you have the following message resources in `grails-app/i18n`:
@@ -68,7 +87,7 @@ you have the following message resources in `grails-app/i18n`:
 * `messages_es.properties`
 * `messages_fr.properties`
 
-Then, you should have the same set of files in `grails-app/assets/javascripts`:
+Then, you should have the same set of files in e. g. `grails-app/assets/i18n`:
 
 * `messages.i18n`
 * `messages_de.i18n`
@@ -77,7 +96,8 @@ Then, you should have the same set of files in `grails-app/assets/javascripts`:
 * `messages_fr.i18n`
 
 Normally, you would have to declare the same set of message codes in each file.
-To DRY, add a file `_messages.i18n` to `grails-app/assets/javascripts`:
+To DRY, add a file `_messages.i18n` to `grails-app/assets/i18n` (the
+leading underscore prevents the i18n file to be compiled itself):
 
 ```
 #
@@ -92,7 +112,17 @@ contact.foo.bar
 
 ```
 
-Then, you can import this file in all other files, e. g. in `messages_de.i18n`:
+Then, you can import this file in all other files, e. g.:
+
+```
+#
+# messages.i18n
+# Client-side i18n, English messages.
+#
+
+@import _messages
+
+```
 
 ```
 #
@@ -104,14 +134,23 @@ Then, you can import this file in all other files, e. g. in `messages_de.i18n`:
 
 ```
 
-Including localized assets
---------------------------
+```
+#
+# messages_es.i18n
+# Client-side i18n, Spanish messages.
+#
+
+@import _messages
+
+```
+
+## Including localized assets
 
 In order to include a localized asset you can either use an asset-pipeline
 `require` directive or the tag `<asset:i18n>`.  The tag supports the following
 attributes:
 
-* `locale`.  Either a string or a `java.util.Locale` object reprenting the
+* `locale`.  Either a string or a `java.util.Locale` object representing the
   locale that should be loaded.  This attribute is mandatory.
 * `name`.  A string indicating the base name of the i18n files to load
   (defaults to `messages`).
@@ -126,17 +165,16 @@ Examples:
 <asset:i18n name="texts" locale="${locale}" />
 ```
 
-Author
-------
+## Author
 
-This plugin was written by [Daniel Ellermann](mailto:d.ellermann@amc-world.de).
+This plugin was written by [Daniel Ellermann](mailto:d.ellermann@amc-world.de)
+([AMC World Technologies GmbH][amc-world]).
 
-License
--------
+## License
 
 This plugin was published under the
 [Apache License, Version 2.0][apache-license].
 
+[amc-world]: http://www.amc-world.de
 [apache-license]: http://www.apache.org/licenses/LICENSE-2.0
 [asset-pipeline]: http://www.github.com/bertramdev/asset-pipeline
-
