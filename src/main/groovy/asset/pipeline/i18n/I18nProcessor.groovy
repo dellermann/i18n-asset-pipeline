@@ -22,6 +22,7 @@ package asset.pipeline.i18n
 import asset.pipeline.AbstractProcessor
 import asset.pipeline.AssetCompiler
 import asset.pipeline.AssetFile
+import grails.io.IOUtils
 import groovy.transform.CompileStatic
 import java.util.regex.Matcher
 import org.springframework.core.io.DefaultResourceLoader
@@ -39,7 +40,7 @@ import org.springframework.core.io.ResourceLoader
  * <ul>
  *   <li>The file name (without extension) must end with the locale
  *   specification, e. g. {@code messages_de.i18n} or
- *   {@code msg_en_UK.i18n}.</li>
+ * {@code msg_en_UK.i18n}.</li>
  *   <li>The files are line based.</li>
  *   <li>All lines are trimmed (that is, whitespaces are removed from beginning
  *   and end of lines.</li>
@@ -47,13 +48,13 @@ import org.springframework.core.io.ResourceLoader
  *   are ignored.</li>
  *   <li>Lines starting with <code>@import <i>path</i></code> are replaced by
  *   the content of the file with path <code><i>path</i></code>.  The suffix
- *   {@code .i18n} at path is optional and is appended automatically.</li>
+ * {@code .i18n} at path is optional and is appended automatically.</li>
  *   <li>All other lines are treated as code keys which will be looked up in
  *   Grails message resources for the locale specified in the file.</li>
  * </ul>
  *
- * @author  Daniel Ellermann
- * @author  David Estes
+ * @author Daniel Ellermann
+ * @author David Estes
  * @version 3.0
  */
 @CompileStatic
@@ -64,11 +65,9 @@ class I18nProcessor extends AbstractProcessor {
     protected static final String PROPERTIES_SUFFIX = '.properties'
     protected static final String XML_SUFFIX = '.xml'
 
-
     //-- Fields ---------------------------------
 
     ResourceLoader resourceLoader = new DefaultResourceLoader()
-
 
     //-- Constructors ---------------------------
 
@@ -76,12 +75,11 @@ class I18nProcessor extends AbstractProcessor {
      * Creates a new i18n resource processor within the given asset
      * pre-compiler.
      *
-     * @param precompiler   the given asset pre-compiler
+     * @param precompiler the given asset pre-compiler
      */
     I18nProcessor(AssetCompiler precompiler) {
         super(precompiler)
     }
-
 
     //-- Public methods -------------------------
 
@@ -90,28 +88,32 @@ class I18nProcessor extends AbstractProcessor {
         Matcher m = assetFile.name =~ /._(\w+)\.i18n$/
         StringBuilder buf = new StringBuilder('messages')
         if (m) buf << '_' << m.group(1)
-        Properties props = loadMessages(buf.toString())
+        Properties props
+        if (assetFile.encoding != null) {
+            props = loadMessages(buf.toString(), assetFile.encoding)
+        } else {
+            props = loadMessages(buf.toString())
+        }
 
         // At this point, inputText has been pre-processed (I18nPreprocessor).
-        Map<String, String> messages = [: ]
+        Map<String, String> messages = [:]
         inputText.toString()
-            .eachLine { String line ->
-                if (line != '') {
-                    messages.put line, props.getProperty(line, line)
-                }
+                .eachLine { String line ->
+            if (line != '') {
+                messages.put line, props.getProperty(line, line)
             }
+        }
 
         compileJavaScript messages
     }
-
 
     //-- Non-public methods ---------------------
 
     /**
      * Compiles JavaScript code from the given localized messages.
      *
-     * @param messages  the given messages
-     * @return          the compiled JavaScript code
+     * @param messages the given messages
+     * @return the compiled JavaScript code
      */
     private String compileJavaScript(Map<String, String> messages) {
         StringBuilder buf = new StringBuilder('''(function (win) {
@@ -123,9 +125,9 @@ class I18nProcessor extends AbstractProcessor {
                 buf << ',\n'
             }
             String value = entry.value
-                .replace('\\', '\\\\')
-                .replace('\n', '\\n')
-                .replace('"', '\\"')
+                    .replace('\\', '\\\\')
+                    .replace('\n', '\\n')
+                    .replace('"', '\\"')
             buf << '        "' << entry.key << '": "' << value << '"'
         }
         buf << '''
@@ -142,15 +144,16 @@ class I18nProcessor extends AbstractProcessor {
     /**
      * Loads the message resources from the given file.
      *
-     * @param fileName                  the given base file name
-     * @return                          the read message resources
+     * @param fileName the given base file name
+     * @return the read message resources
      * @throws FileNotFoundException    if no resource with the required
      *                                  localized messages exists
      */
-    private Properties loadMessages(String fileName) {
+    private Properties loadMessages(String fileName, String encoding = 'utf-8') {
         Resource res = locateResource(fileName)
         Properties props = new Properties()
-        props.load res.inputStream
+        String propertiesString = IOUtils.toString(res.inputStream, encoding)
+        props.load(new StringReader(propertiesString))
 
         props
     }
@@ -162,35 +165,35 @@ class I18nProcessor extends AbstractProcessor {
      *   <li>in classpath with extension {@code .properties}</li>
      *   <li>in classpath with extension {@code .xml}</li>
      *   <li>in file system in folder {@code grails-app/i18n} with extension
-     *   {@code .properties}</li>
+     * {@code .properties}</li>
      *   <li>in file system in folder {@code grails-app/i18n} with extension
-     *   {@code .xml}</li>
+     * {@code .xml}</li>
      * </ul>
      *
-     * @param fileName                  the given base file name
-     * @return                          the resource containing the messages
+     * @param fileName the given base file name
+     * @return the resource containing the messages
      * @throws FileNotFoundException    if no resource with the required
      *                                  localized messages exists
      */
     private Resource locateResource(String fileName) {
         Resource resource =
-            resourceLoader.getResource(fileName + PROPERTIES_SUFFIX)
+                resourceLoader.getResource(fileName + PROPERTIES_SUFFIX)
         if (!resource.exists()) {
             resource = resourceLoader.getResource(fileName + XML_SUFFIX)
         }
         if (!resource.exists()) {
             resource = resourceLoader.getResource(
-                "file:grails-app/i18n/${fileName}${PROPERTIES_SUFFIX}"
+                    "file:grails-app/i18n/${fileName}${PROPERTIES_SUFFIX}"
             )
         }
         if (!resource.exists()) {
             resource = resourceLoader.getResource(
-                "file:grails-app/i18n/${fileName}${XML_SUFFIX}"
+                    "file:grails-app/i18n/${fileName}${XML_SUFFIX}"
             )
         }
         if (!resource.exists()) {
             throw new FileNotFoundException(
-                "Cannot find i18n messages file ${fileName}."
+                    "Cannot find i18n messages file ${fileName}."
             )
         }
 
