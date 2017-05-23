@@ -147,8 +147,18 @@ Examples:
 <asset:i18n name="texts" locale="${locale}" />
 ```
 
+## i18n.js
 
+A more advanced i18n.js is included to add more advanced formatting on the client. 
+It can be included with `<asset:javascript src="i18n-asset/i18n.js/>`. 
+You can now use `$i18n.m(<code>,<args>,<defaultMessage>)` to retrieve the messages.
+Internally $i18n uses $L to get the message. 
 
+* code: the code of the message in the messages resource bundle, required
+* args: an array of values to format the message with, optional 
+* defaultMessage: a defaultMessage to display if code is not found, defaults to `[<code>]`
+
+For convencience `$i18n.md(<code>,<defaultMessage>)` is added as well.
 
 ## Author
 

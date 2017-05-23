@@ -61,8 +61,7 @@ class I18nTagLib implements TagLibrary {
     def i18n = { attrs ->
         Properties manifest = AssetPipelineConfigHolder.manifest
         ApplicationContext ctx = grailsApplication.mainContext
-        String mapping = assetProcessorService.assetMapping
-
+        
         def l = attrs.remove('locale') ?: ''
         String locale = ''
         if (l instanceof Locale || l instanceof CharSequence) {
