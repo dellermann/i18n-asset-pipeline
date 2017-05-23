@@ -45,8 +45,8 @@ class I18nPreprocessor {
 
     protected static final Pattern REGEX_IGNORE = ~/^\s*(?:#.*)?$/
     protected static final Pattern REGEX_IMPORT = ~/^\s*@import\s+(.+)$/
-
-
+    static final Pattern REGEX_FILENAME_SPLIT = ~/(\w+?)(_\w+)?\.i18n$/
+    protected static final String EXTENSION = '.i18n'
     //-- Constructors ---------------------------
 
     protected I18nPreprocessor() {}
@@ -71,17 +71,60 @@ class I18nPreprocessor {
      * @param input the content of the i18n file
      * @return      the pre-processed content
      */
-    String preprocess(AssetFile file, String input = file?.inputStream?.text) {
-        if (!input) {
-            return ''
+    String preprocess(AssetFile file) {
+        StringBuilder sb = new StringBuilder()
+        
+        Set<String> resultCodes = new HashSet<>()
+        
+        String filename = file.name
+        if (!filename.endsWith(EXTENSION)) {
+            filename += EXTENSION
         }
 
-        Set<AssetFile> fileHistory = new HashSet<>()
-        fileHistory << file
+        Matcher matcher = REGEX_FILENAME_SPLIT.matcher(filename)
+        matcher.matches()
 
-        doPreprocess input, fileHistory
+        String baseFilename = matcher.group(1)
+        String locales = matcher.group(2)
+
+        if(locales){
+            String[] localeParts = locales?.split('_')
+
+            String localeFile = baseFilename
+            for(int i=0;i<localeParts.length;i++){
+                if(i!=0) localeFile = localeFile + '_' + localeParts[i]
+                if(i==localeParts.length-1){
+                    doPreprocess(file,resultCodes)
+                }
+                else{
+                    doPreprocess(AssetHelper.fileForUri(localeFile+EXTENSION),resultCodes)
+                }
+            }
+        }
+        else{
+            doPreprocess(file,resultCodes)
+        }
+        
+        resultCodes.inject(sb){acc,item->
+            acc.append(item).append('\n')
+        }.toString()
     }
 
+    private void doPreprocess(AssetFile file,Set<String> codes){
+        if(file==null) return
+        
+        def fileContent
+        String encoding = file.baseFile?.encoding?:file.encoding
+        if(encoding){
+            fileContent = file.inputStream.getText(encoding)
+        }
+        else{
+            fileContent = file.inputStream.text
+        }
+
+        doPreprocess(fileContent,codes)        
+    }
+    
 
     //-- Non-public methods ---------------------
 
@@ -95,47 +138,14 @@ class I18nPreprocessor {
      *                      circular dependencies
      * @return              the pre-processed content
      */
-    private String doPreprocess(String input, Set<AssetFile> fileHistory) {
-        StringBuffer buf = new StringBuffer(input.length())
+    private void doPreprocess(String input, Set<String> codes) {
         input.eachLine { String line ->
             line = line.trim()
             if (line ==~ REGEX_IGNORE) return
-
-            Matcher m = line =~ REGEX_IMPORT
-            if (m) {
-                line = resolveImport(m.group(1).trim(), fileHistory)
-                if (!line) return
-                line = line.trim()
-            }
-            buf << line << '\n'
+            
+            codes.add(line)
         }
-
-        buf.toString()
     }
-
-    /**
-     * Loads the import file with the file name and processes its content.
-     *
-     * @param fileName      the name of the import file
-     * @param fileHistory   the history of all import files that have been
-     *                      processed already; this is needed to handle
-     *                      circular dependencies
-     * @return              the pre-processed content of the import file
-     */
-    private String resolveImport(String fileName, Set<AssetFile> fileHistory) {
-        if (!fileName.endsWith('.i18n')) {
-            fileName += '.i18n'
-        }
-
-        AssetFile importFile = AssetHelper.fileForUri(fileName)
-        if (importFile == null || importFile in fileHistory) {
-            return ''
-        }
-
-        fileHistory << importFile
-        doPreprocess importFile.inputStream.text, fileHistory
-    }
-
 
     //-- Inner classes --------------------------
 

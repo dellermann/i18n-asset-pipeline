@@ -65,7 +65,8 @@ dependencies {
     compile 'org.grails:grails-core'
     compile 'org.grails:grails-dependencies'
     compile 'org.grails:grails-web-boot'
-    compile 'org.grails.plugins:asset-pipeline:3.1.0'
+    compile 'com.bertramlabs.plugins:asset-pipeline-grails:2.13.2'
+    compile 'com.bertramlabs.plugins:asset-pipeline-core:2.13.2'
 
     console 'org.grails:grails-console'
 

@@ -22,12 +22,29 @@ package asset.pipeline.i18n
 import asset.pipeline.AbstractProcessor
 import asset.pipeline.AssetCompiler
 import asset.pipeline.AssetFile
+import asset.pipeline.AssetPipelineConfigHolder
+import asset.pipeline.fs.AssetResolver
+import asset.pipeline.fs.JarAssetResolver
 import grails.io.IOUtils
+import grails.plugins.GrailsPlugin
+import grails.plugins.Plugin
+import grails.util.Environment
+import grails.util.Holder
+import grails.util.Holders
 import groovy.transform.CompileStatic
+import org.grails.plugins.BinaryGrailsPlugin
+import org.springframework.core.io.FileSystemResource
+import org.springframework.core.io.InputStreamResource
+import org.springframework.core.io.UrlResource
+
+import java.util.jar.JarEntry
+import java.util.jar.JarFile
 import java.util.regex.Matcher
 import org.springframework.core.io.DefaultResourceLoader
 import org.springframework.core.io.Resource
 import org.springframework.core.io.ResourceLoader
+
+import java.util.regex.Pattern
 
 
 /**
@@ -85,14 +102,41 @@ class I18nProcessor extends AbstractProcessor {
 
     @Override
     String process(String inputText, AssetFile assetFile) {
-        Matcher m = assetFile.name =~ /._(\w+)\.i18n$/
-        StringBuilder buf = new StringBuilder('messages')
-        if (m) buf << '_' << m.group(1)
+        Matcher m = assetFile.name =~ /(\w+?)(_\w+)?\.i18n$/
+        
+        def options = []
+        
+        if(m){
+            def baseFile = m.group(1)
+            if (m.group(2)){
+                def locales = m.group(2).split('_')
+                
+                def sb = new StringBuffer(baseFile)
+                for(locale in locales){
+                    if(locale.empty){
+                        options << sb.toString()
+                    }
+                    else{
+                        sb.append('_').append(locale)
+                        options << sb.toString()
+                    }
+                }
+            }
+            else{
+                options << baseFile
+            }
+        }
+        else{
+            options << 'messages'
+        }
+        
+        
+        
         Properties props
         if (assetFile.encoding != null) {
-            props = loadMessages(buf.toString(), assetFile.encoding)
+            props = loadMessages(options, assetFile.encoding)
         } else {
-            props = loadMessages(buf.toString())
+            props = loadMessages(options)
         }
 
         // At this point, inputText has been pre-processed (I18nPreprocessor).
@@ -100,8 +144,15 @@ class I18nProcessor extends AbstractProcessor {
         inputText.toString()
                 .eachLine { String line ->
             if (line != '') {
-                messages.put line, props.getProperty(line, line)
-            }
+                if(line.startsWith('regexp:')){
+                    def p = Pattern.compile(line.substring('regexp:'.length()).trim())
+                    Map<Object,Object> matchedEntries = props.findAll{p.matcher((String)it.key).matches()}
+                    messages.putAll((Map<String,String>)(Map<?,?>)matchedEntries)
+                }
+                else{
+                    messages.put line, props.getProperty(line, line/*defaultValue*/)
+                }
+            }            
         }
 
         compileJavaScript messages
@@ -149,13 +200,22 @@ class I18nProcessor extends AbstractProcessor {
      * @throws FileNotFoundException    if no resource with the required
      *                                  localized messages exists
      */
-    private Properties loadMessages(String fileName, String encoding = 'utf-8') {
-        Resource res = locateResource(fileName)
-        Properties props = new Properties()
-        String propertiesString = IOUtils.toString(res.inputStream, encoding)
-        props.load(new StringReader(propertiesString))
-
-        props
+    private Properties loadMessages(List<String> options, String encoding = 'utf-8') {
+        Properties messages = new Properties()
+        
+        for(option in options){
+            Properties props = new Properties()
+            try{
+                Resource res = locateResource(option)
+                String propertiesString = IOUtils.toString(res.inputStream, encoding)
+                props.load(new StringReader(propertiesString))
+                messages.putAll(props)
+            }
+            catch(Exception e){
+                System.out.println "Could not load file ${option}"
+            }
+        }
+        messages
     }
 
     /**
@@ -192,11 +252,68 @@ class I18nProcessor extends AbstractProcessor {
             )
         }
         if (!resource.exists()) {
-            throw new FileNotFoundException(
-                    "Cannot find i18n messages file ${fileName}."
-            )
+            // Nuclear approach, scan all jar files for the messages file
+            resource = loadFromAssetResolvers(fileName)
+            
+            if(!resource){
+                throw new FileNotFoundException(
+                        "Cannot find i18n messages file ${fileName}."
+                )
+            }
         }
 
         resource
+    }
+
+    private static Resource loadFromAssetResolvers(String filename){
+        Resource result = null
+        if(Environment.developmentMode){            
+            for(GrailsPlugin plugin in Holders.pluginManager.allPlugins){
+                if(plugin instanceof BinaryGrailsPlugin){
+                    String projectDir = ((BinaryGrailsPlugin)plugin).projectDirectory
+                    String i18nPropertiesPath = new File(projectDir,"grails-app/i18n").canonicalPath
+                    
+                    if(new File(i18nPropertiesPath,filename+PROPERTIES_SUFFIX).exists()){
+                        result = new FileSystemResource(new File(i18nPropertiesPath,filename+PROPERTIES_SUFFIX))
+                        break
+                    }
+                    else if(new File(i18nPropertiesPath,filename+XML_SUFFIX).exists()){
+                        result = new FileSystemResource(new File(i18nPropertiesPath,filename+XML_SUFFIX))
+                        break
+                    }
+                }
+                else{
+                    def classLoader = plugin.getPluginClass().getClassLoader()
+                    def url = classLoader.getResource(filename+PROPERTIES_SUFFIX)
+                    if(!url){
+                        url = classLoader.getResource(filename+XML_SUFFIX)
+                    }
+                    if(url){
+                        result = new UrlResource(url)
+                        break
+                    }
+                }
+            }
+        }
+        else{
+            def filenameOptions = [filename+PROPERTIES_SUFFIX,filename+XML_SUFFIX]
+            for(AssetResolver resolver in AssetPipelineConfigHolder.resolvers){
+                if(resolver instanceof JarAssetResolver){
+                    JarFile jarFile = ((JarAssetResolver)resolver).baseJar;
+                    Enumeration<JarEntry> entries = jarFile.entries()
+
+                    while(entries.hasMoreElements()){
+                        JarEntry entry = entries.nextElement()
+                        String entryName = entry.name
+                        if(filenameOptions.contains(entryName)){
+                            result = new InputStreamResource(jarFile.getInputStream(entry))
+                            break
+                        }
+                    }
+                    if(result) break
+                }
+            }
+        }
+        return result
     }
 }

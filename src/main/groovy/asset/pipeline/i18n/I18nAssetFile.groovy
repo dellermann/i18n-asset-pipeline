@@ -60,16 +60,7 @@ class I18nAssetFile extends AbstractAssetFile {
     String processedStream(AssetCompiler precompiler) {
         def skipCache = precompiler ?: (!processors || processors.size() == 0)
 
-        String fileText
-        if(baseFile?.encoding || encoding) {
-            fileText = inputStream?.getText(
-                baseFile?.encoding ? baseFile.encoding : encoding
-            )
-        } else {
-            fileText = inputStream?.text
-        }
-
-        fileText = I18nPreprocessor.instance.preprocess(this, fileText)
+        String fileText = I18nPreprocessor.instance.preprocess(this)
 
         def md5 = AssetHelper.getByteDigest(fileText.bytes)
         if (!skipCache) {
