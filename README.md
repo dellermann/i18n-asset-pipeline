@@ -19,9 +19,9 @@ i18n-asset-pipeline version | required for
  2.x                        | Grails 3.x
 
 
-## Breaking update information 2.0.1
+## Breaking update information 2.1.0
 * Removed @import option, replaced with default i18n messages inheritance 
-  (i.e. all keys from messages.i18n are merged with the localized version messages_nl.properties)
+  (i.e. all keys from messages.i18n are merged with the localized version messages_nl.i18n)
 * Added support for loading messages.properties from plugins, 
   *Note:* Changes to the messages properties files are not hot reloaded. You need 
   to update the i18n file for this to happen. 
