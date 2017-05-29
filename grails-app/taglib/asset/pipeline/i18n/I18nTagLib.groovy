@@ -78,9 +78,9 @@ class I18nTagLib implements TagLibrary {
         String [] parts = locale.split('_')
 
         String src = null
-        for (int i = parts.length - 1; i >= 0 && !src; --i) {
+        for (int i = parts.length; i >= 0 && !src; --i) {
             StringBuilder buf = new StringBuilder(name)
-            for (int j = 0; j <= i; j++) {
+            for (int j = 0; j < i; j++) {
                 buf << '_' << parts[j]
             }
             buf << '.js'
@@ -115,7 +115,8 @@ class I18nTagLib implements TagLibrary {
                 log.debug "Localized asset not found - using default asset '${name}.js'"
             }
         }
-
-        out << asset.javascript(src: src ?: (name + '.js'))
+        if(src){
+            out << asset.javascript(src: src ?: (name + '.js'))
+        }
     }
 }

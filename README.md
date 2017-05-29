@@ -39,12 +39,12 @@ To use this plugin you have to add the following code to your `build.gradle`:
 ```groovy
 buildscript {
     dependencies {
-        classpath 'org.amcworld.plugins:i18n-asset-pipeline:2.0.1'
+        classpath 'org.amcworld.plugins:i18n-asset-pipeline:2.1.0-SNAPSHOT'
     }
 }
 
 dependencies {
-    runtime 'org.grails.plugins:i18n-asset-pipeline:2.0.1'
+    runtime 'org.grails.plugins:i18n-asset-pipeline:2.1.0-SNAPSHOT'
 }
 ```
 
