@@ -171,6 +171,7 @@ class I18nProcessor extends AbstractProcessor {
     var messages = {
 ''')
         int i = 0
+        messages = messages.sort()
         for (Map.Entry<String, String> entry in messages.entrySet()) {
             if (i++ > 0) {
                 buf << ',\n'
@@ -267,8 +268,9 @@ class I18nProcessor extends AbstractProcessor {
 
     private static Resource loadFromAssetResolvers(String filename){
         Resource result = null
-        if(Environment.developmentMode){            
-            for(GrailsPlugin plugin in Holders.pluginManager.allPlugins){
+        def pluginManager = Holders.pluginManager 
+        if(pluginManager != null){
+            for(GrailsPlugin plugin in pluginManager.allPlugins){
                 if(plugin instanceof BinaryGrailsPlugin){
                     String projectDir = ((BinaryGrailsPlugin)plugin).projectDirectory
                     String i18nPropertiesPath = new File(projectDir,"grails-app/i18n").canonicalPath
