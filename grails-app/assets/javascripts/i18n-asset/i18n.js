@@ -1,6 +1,10 @@
 ;(function(factory){
     factory(window.$L);
 }(function(messages){
+    if(!messages){
+        console.log('No messagebundle loaded, always returning message code as fallback.');
+    }
+    
     var emptyArray = [];
     var i18n = function(){}
     i18n.prototype.md = function(code,defaultMessage){
@@ -31,7 +35,7 @@
         return '[' + code + ']';
     },
     i18n.prototype.getMessage = function(code){
-        return messages(code)
+        return messages? messages(code): null;
     }
     window.$i18n = new i18n();    
 }));
