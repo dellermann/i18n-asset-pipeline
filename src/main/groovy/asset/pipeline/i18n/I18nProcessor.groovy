@@ -22,11 +22,29 @@ package asset.pipeline.i18n
 import asset.pipeline.AbstractProcessor
 import asset.pipeline.AssetCompiler
 import asset.pipeline.AssetFile
+import asset.pipeline.AssetPipelineConfigHolder
+import asset.pipeline.fs.AssetResolver
+import asset.pipeline.fs.JarAssetResolver
+import grails.io.IOUtils
+import grails.plugins.GrailsPlugin
+import grails.plugins.Plugin
+import grails.util.Environment
+import grails.util.Holder
+import grails.util.Holders
 import groovy.transform.CompileStatic
+import org.grails.plugins.BinaryGrailsPlugin
+import org.springframework.core.io.FileSystemResource
+import org.springframework.core.io.InputStreamResource
+import org.springframework.core.io.UrlResource
+
+import java.util.jar.JarEntry
+import java.util.jar.JarFile
 import java.util.regex.Matcher
 import org.springframework.core.io.DefaultResourceLoader
 import org.springframework.core.io.Resource
 import org.springframework.core.io.ResourceLoader
+
+import java.util.regex.Pattern
 
 
 /**
@@ -39,7 +57,7 @@ import org.springframework.core.io.ResourceLoader
  * <ul>
  *   <li>The file name (without extension) must end with the locale
  *   specification, e. g. {@code messages_de.i18n} or
- *   {@code msg_en_UK.i18n}.</li>
+ * {@code msg_en_UK.i18n}.</li>
  *   <li>The files are line based.</li>
  *   <li>All lines are trimmed (that is, whitespaces are removed from beginning
  *   and end of lines.</li>
@@ -47,13 +65,13 @@ import org.springframework.core.io.ResourceLoader
  *   are ignored.</li>
  *   <li>Lines starting with <code>@import <i>path</i></code> are replaced by
  *   the content of the file with path <code><i>path</i></code>.  The suffix
- *   {@code .i18n} at path is optional and is appended automatically.</li>
+ * {@code .i18n} at path is optional and is appended automatically.</li>
  *   <li>All other lines are treated as code keys which will be looked up in
  *   Grails message resources for the locale specified in the file.</li>
  * </ul>
  *
- * @author  Daniel Ellermann
- * @author  David Estes
+ * @author Daniel Ellermann
+ * @author David Estes
  * @version 3.0
  */
 @CompileStatic
@@ -64,11 +82,9 @@ class I18nProcessor extends AbstractProcessor {
     protected static final String PROPERTIES_SUFFIX = '.properties'
     protected static final String XML_SUFFIX = '.xml'
 
-
     //-- Fields ---------------------------------
 
     ResourceLoader resourceLoader = new DefaultResourceLoader()
-
 
     //-- Constructors ---------------------------
 
@@ -76,56 +92,94 @@ class I18nProcessor extends AbstractProcessor {
      * Creates a new i18n resource processor within the given asset
      * pre-compiler.
      *
-     * @param precompiler   the given asset pre-compiler
+     * @param precompiler the given asset pre-compiler
      */
     I18nProcessor(AssetCompiler precompiler) {
         super(precompiler)
     }
 
-
     //-- Public methods -------------------------
 
     @Override
     String process(String inputText, AssetFile assetFile) {
-        Matcher m = assetFile.name =~ /._(\w+)\.i18n$/
-        StringBuilder buf = new StringBuilder('messages')
-        if (m) buf << '_' << m.group(1)
-        Properties props = loadMessages(buf.toString())
-
-        // At this point, inputText has been pre-processed (I18nPreprocessor).
-        Map<String, String> messages = [: ]
-        inputText.toString()
-            .eachLine { String line ->
-                if (line != '') {
-                    messages.put line, props.getProperty(line, line)
+        Matcher m = assetFile.name =~ /(\w+?)(_\w+)?\.i18n$/
+        
+        def options = []
+        
+        if(m){
+            def baseFile = m.group(1)
+            if (m.group(2)){
+                def locales = m.group(2).split('_')
+                
+                def sb = new StringBuffer(baseFile)
+                for(locale in locales){
+                    if(locale.empty){
+                        options << sb.toString()
+                    }
+                    else{
+                        sb.append('_').append(locale)
+                        options << sb.toString()
+                    }
                 }
             }
+            else{
+                options << baseFile
+            }
+        }
+        else{
+            options << 'messages'
+        }
+        
+        
+        
+        Properties props
+        if (assetFile.encoding != null) {
+            props = loadMessages(options, assetFile.encoding)
+        } else {
+            props = loadMessages(options)
+        }
+
+        // At this point, inputText has been pre-processed (I18nPreprocessor).
+        Map<String, String> messages = [:]
+        inputText.toString()
+                .eachLine { String line ->
+            if (line != '') {
+                if(line.startsWith('regexp:')){
+                    def p = Pattern.compile(line.substring('regexp:'.length()).trim())
+                    Map<Object,Object> matchedEntries = props.findAll{p.matcher((String)it.key).matches()}
+                    messages.putAll((Map<String,String>)(Map<?,?>)matchedEntries)
+                }
+                else{
+                    messages.put line, props.getProperty(line, line/*defaultValue*/)
+                }
+            }            
+        }
 
         compileJavaScript messages
     }
-
 
     //-- Non-public methods ---------------------
 
     /**
      * Compiles JavaScript code from the given localized messages.
      *
-     * @param messages  the given messages
-     * @return          the compiled JavaScript code
+     * @param messages the given messages
+     * @return the compiled JavaScript code
      */
     private String compileJavaScript(Map<String, String> messages) {
         StringBuilder buf = new StringBuilder('''(function (win) {
     var messages = {
 ''')
         int i = 0
+        messages = messages.sort()
         for (Map.Entry<String, String> entry in messages.entrySet()) {
             if (i++ > 0) {
                 buf << ',\n'
             }
             String value = entry.value
-                .replace('\\', '\\\\')
-                .replace('\n', '\\n')
-                .replace('"', '\\"')
+                    .replace('\\', '\\\\')
+                    .replace('\n', '\\n')
+                    .replace('"', '\\"')
             buf << '        "' << entry.key << '": "' << value << '"'
         }
         buf << '''
@@ -142,17 +196,27 @@ class I18nProcessor extends AbstractProcessor {
     /**
      * Loads the message resources from the given file.
      *
-     * @param fileName                  the given base file name
-     * @return                          the read message resources
+     * @param fileName the given base file name
+     * @return the read message resources
      * @throws FileNotFoundException    if no resource with the required
      *                                  localized messages exists
      */
-    private Properties loadMessages(String fileName) {
-        Resource res = locateResource(fileName)
-        Properties props = new Properties()
-        props.load res.inputStream
-
-        props
+    private Properties loadMessages(List<String> options, String encoding = 'utf-8') {
+        Properties messages = new Properties()
+        
+        for(option in options){
+            Properties props = new Properties()
+            try{
+                Resource res = locateResource(option)
+                String propertiesString = IOUtils.toString(res.inputStream, encoding)
+                props.load(new StringReader(propertiesString))
+                messages.putAll(props)
+            }
+            catch(Exception e){
+                System.out.println "Could not load file ${option}"
+            }
+        }
+        messages
     }
 
     /**
@@ -162,38 +226,96 @@ class I18nProcessor extends AbstractProcessor {
      *   <li>in classpath with extension {@code .properties}</li>
      *   <li>in classpath with extension {@code .xml}</li>
      *   <li>in file system in folder {@code grails-app/i18n} with extension
-     *   {@code .properties}</li>
+     * {@code .properties}</li>
      *   <li>in file system in folder {@code grails-app/i18n} with extension
-     *   {@code .xml}</li>
+     * {@code .xml}</li>
      * </ul>
      *
-     * @param fileName                  the given base file name
-     * @return                          the resource containing the messages
+     * @param fileName the given base file name
+     * @return the resource containing the messages
      * @throws FileNotFoundException    if no resource with the required
      *                                  localized messages exists
      */
     private Resource locateResource(String fileName) {
         Resource resource =
-            resourceLoader.getResource(fileName + PROPERTIES_SUFFIX)
+                resourceLoader.getResource(fileName + PROPERTIES_SUFFIX)
         if (!resource.exists()) {
             resource = resourceLoader.getResource(fileName + XML_SUFFIX)
         }
         if (!resource.exists()) {
             resource = resourceLoader.getResource(
-                "file:grails-app/i18n/${fileName}${PROPERTIES_SUFFIX}"
+                    "file:grails-app/i18n/${fileName}${PROPERTIES_SUFFIX}"
             )
         }
         if (!resource.exists()) {
             resource = resourceLoader.getResource(
-                "file:grails-app/i18n/${fileName}${XML_SUFFIX}"
+                    "file:grails-app/i18n/${fileName}${XML_SUFFIX}"
             )
         }
         if (!resource.exists()) {
-            throw new FileNotFoundException(
-                "Cannot find i18n messages file ${fileName}."
-            )
+            // Nuclear approach, scan all jar files for the messages file
+            resource = loadFromAssetResolvers(fileName)
+            
+            if(!resource){
+                throw new FileNotFoundException(
+                        "Cannot find i18n messages file ${fileName}."
+                )
+            }
         }
 
         resource
+    }
+
+    private static Resource loadFromAssetResolvers(String filename){
+        Resource result = null
+        def pluginManager = Holders.pluginManager 
+        if(pluginManager != null){
+            for(GrailsPlugin plugin in pluginManager.allPlugins){
+                if(plugin instanceof BinaryGrailsPlugin){
+                    String projectDir = ((BinaryGrailsPlugin)plugin).projectDirectory
+                    String i18nPropertiesPath = new File(projectDir,"grails-app/i18n").canonicalPath
+                    
+                    if(new File(i18nPropertiesPath,filename+PROPERTIES_SUFFIX).exists()){
+                        result = new FileSystemResource(new File(i18nPropertiesPath,filename+PROPERTIES_SUFFIX))
+                        break
+                    }
+                    else if(new File(i18nPropertiesPath,filename+XML_SUFFIX).exists()){
+                        result = new FileSystemResource(new File(i18nPropertiesPath,filename+XML_SUFFIX))
+                        break
+                    }
+                }
+                else{
+                    def classLoader = plugin.getPluginClass().getClassLoader()
+                    def url = classLoader.getResource(filename+PROPERTIES_SUFFIX)
+                    if(!url){
+                        url = classLoader.getResource(filename+XML_SUFFIX)
+                    }
+                    if(url){
+                        result = new UrlResource(url)
+                        break
+                    }
+                }
+            }
+        }
+        else{
+            def filenameOptions = [filename+PROPERTIES_SUFFIX,filename+XML_SUFFIX]
+            for(AssetResolver resolver in AssetPipelineConfigHolder.resolvers){
+                if(resolver instanceof JarAssetResolver){
+                    JarFile jarFile = ((JarAssetResolver)resolver).baseJar;
+                    Enumeration<JarEntry> entries = jarFile.entries()
+
+                    while(entries.hasMoreElements()){
+                        JarEntry entry = entries.nextElement()
+                        String entryName = entry.name
+                        if(filenameOptions.contains(entryName)){
+                            result = new InputStreamResource(jarFile.getInputStream(entry))
+                            break
+                        }
+                    }
+                    if(result) break
+                }
+            }
+        }
+        return result
     }
 }

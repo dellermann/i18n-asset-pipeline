@@ -27,14 +27,16 @@ buildscript {
     }
     dependencies {
         classpath "org.grails:grails-gradle-plugin:$grailsVersion"
+        classpath "com.bertramlabs.plugins:asset-pipeline-gradle:2.13.2"
     }
 }
 
-version '2.0.0'
+version '2.1.0-SNAPSHOT'
 group 'org.grails.plugins'
 
 apply plugin: 'eclipse'
 apply plugin: 'idea'
+apply plugin: 'asset-pipeline'
 apply plugin: 'org.grails.grails-plugin'
 apply plugin: 'org.grails.grails-plugin-publish'
 apply plugin: 'org.grails.grails-gsp'
@@ -44,6 +46,8 @@ ext {
     grailsVersion = project.grailsVersion
     gradleWrapperVersion = project.gradleWrapperVersion
 }
+
+
 
 repositories {
     mavenLocal()
@@ -65,7 +69,9 @@ dependencies {
     compile 'org.grails:grails-core'
     compile 'org.grails:grails-dependencies'
     compile 'org.grails:grails-web-boot'
-    compile 'org.grails.plugins:asset-pipeline:3.1.0'
+    compile "com.bertramlabs.plugins:asset-pipeline-gradle:2.13.2"
+    compile 'com.bertramlabs.plugins:asset-pipeline-grails:2.13.2'
+    compile 'com.bertramlabs.plugins:asset-pipeline-core:2.13.2'
 
     console 'org.grails:grails-console'
 
@@ -73,7 +79,6 @@ dependencies {
 
     testCompile 'org.grails:grails-plugin-testing'
 }
-
 task wrapper(type: Wrapper) {
     gradleVersion = gradleWrapperVersion
 }
@@ -98,4 +103,8 @@ grailsPublish {
     title = 'i18n-asset-pipeline'
     desc = 'asset-pipeline plugin to use localized messages in JavaScript.'
     developers = [dellermann: 'Daniel Ellermann']
+}
+
+assets {
+    packagePlugin = true
 }

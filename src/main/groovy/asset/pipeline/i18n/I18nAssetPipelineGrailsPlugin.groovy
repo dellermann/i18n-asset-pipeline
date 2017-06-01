@@ -19,8 +19,7 @@
 
 package asset.pipeline.i18n
 
-import grails.plugins.*
-
+import grails.plugins.Plugin
 
 class I18nAssetPipelineGrailsPlugin extends Plugin {
 
@@ -44,28 +43,24 @@ class I18nAssetPipelineGrailsPlugin extends Plugin {
         url: 'https://github.com/dellermann/i18n-asset-pipeline/issues'
     ]
     def scm = [url: 'https://github.com/dellermann/i18n-asset-pipeline']
-
+    def watchedResources = ['file:./grails-app/i18n/*.properties']
 
     //-- Public methods -------------------------
 
-    Closure doWithSpring() {
-        { ->
-            // TODO Implement runtime spring config (optional)
-        }
-    }
+    Closure doWithSpring() {{ ->
+            
+    }}
 
     void doWithDynamicMethods() {
         // TODO Implement registering dynamic methods to classes (optional)
     }
 
     void doWithApplicationContext() {
-        // TODO Implement post initialization spring config (optional)
+        
     }
 
     void onChange(Map<String, Object> event) {
         // TODO Implement code that is executed when any artefact that this plugin is
-        // watching is modified and reloaded. The event contains: event.source,
-        // event.application, event.manager, event.ctx, and event.plugin.
     }
 
     void onConfigChange(Map<String, Object> event) {
