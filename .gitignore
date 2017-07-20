@@ -7,3 +7,4 @@
 /build
 /plugin.xml
 /web-app/WEB-INF
+*.iml
