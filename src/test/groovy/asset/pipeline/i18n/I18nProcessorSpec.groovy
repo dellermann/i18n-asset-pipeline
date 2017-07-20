@@ -84,7 +84,7 @@ special.quotationMarks = This is a "test".
             new InputStreamResource(
                 new ByteArrayInputStream(MESSAGES.bytes)
             )
-        0 * resourceLoader.getResource('file:grails-app/i18n/messages_de.xml')
+        1 * resourceLoader.getResource('file:grails-app/i18n/messages_de.xml')
         processor.resourceLoader = resourceLoader
 
         and: 'a localized mock asset file'
@@ -147,19 +147,51 @@ special.crlf''',
 
     //-- Non-public methods ---------------------
 
-    private String getJavaScriptCode(String messages) {
+    String getJavaScriptCode(String messages) {
         StringBuilder buf = new StringBuilder('''(function (win) {
-    var messages = {
-''')
+            if (win.i18n_messages) {
+                var tmpMsg = {
+                                ''')
         buf << messages
         buf << '''
-    }
-
-    win.$L = function (code) {
-        return messages[code];
-    }
-}(this));
-'''
+                }
+                for (var attrname in tmpMsg) { win.i18n_messages[attrname] = tmpMsg[attrname]; }
+            }
+            else {
+                win.i18n_messages = {
+                '''
+        buf << messages
+        buf << '''
+                    };
+            }
+            var messages = win.i18n_messages;
+            win.$L = function (code) {
+                var message = messages[code];
+                if(message === undefined) {
+                    return "[" + code + "]";
+                } else if(message instanceof Array) {
+                    var params;
+                    if (arguments.length === 2 && (arguments[1]) instanceof Array) {
+                        params = arguments[1];
+                    } else {
+                        params = Array.prototype.slice.call(arguments);
+                        params.shift();
+                    }
+                    var result = "";
+                    for(var i = 0; i < message.length; i++) {
+                        if(typeof message[i] === "number") {
+                            result += params[message[i]];
+                        } else {
+                            result += message[i];
+                        }
+                    }
+                    return result;
+                } else {
+                    return message;
+                }
+            }
+        }(this));
+        '''
 
         buf.toString()
     }

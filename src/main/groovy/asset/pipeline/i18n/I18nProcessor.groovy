@@ -223,7 +223,7 @@ class I18nProcessor extends AbstractProcessor {
      *                                  localized messages exists
      */
     private Properties loadMessages(String fileName, String locale, String encoding = 'utf-8') {
-        List<Resource> listRes = locateResource(fileName)
+        Set<Resource> listRes = locateResource(fileName)
         Properties props = new Properties()
         for (resource in listRes) {
             String propertiesString = IOUtils.toString(resource.inputStream, encoding)
@@ -263,28 +263,32 @@ class I18nProcessor extends AbstractProcessor {
      * @throws FileNotFoundException    if no resource with the required
      *                                  localized messages exists
      */
-    private List<Resource> locateResource(String fileName) {
-        List<Resource> resourceList = []
+    private Set<Resource> locateResource(String fileName) {
+        Set<Resource> resourceList = [] as Set
         Resource resource =
                 resourceLoader.getResource("classpath*:" + fileName + PROPERTIES_SUFFIX)
-        if (resource.exists()) {
+        if (resource?.exists()) {
             resourceList << resource
         }
         Resource resource2 = resourceLoader.getResource(fileName + XML_SUFFIX)
-        if (resource2.exists()) {
+        if (resource2?.exists()) {
             resourceList << resource2
         }
         Resource resource3 = resourceLoader.getResource(
                 "file:grails-app/i18n/${fileName}${PROPERTIES_SUFFIX}"
         )
-        if (resource3.exists()) {
+        if (resource3?.exists()) {
             resourceList << resource3
         }
         Resource resource4 = resourceLoader.getResource(
                 "file:grails-app/i18n/${fileName}${XML_SUFFIX}"
         )
-        if (resource4.exists()) {
+        if (resource4?.exists()) {
             resourceList << resource4
+        }
+        Resource resource5 = resourceLoader.getResource("${fileName}${PROPERTIES_SUFFIX}")
+        if (resource5?.exists()) {
+            resourceList << resource5
         }
         String paths = System.getProperty("com.i18n-asset-pipeline.pluginRuntimePath")
         if (paths) {
@@ -299,8 +303,6 @@ class I18nProcessor extends AbstractProcessor {
                 for (res in found) {
                     if (res.exists()) {
                         resourceList.add(res)
-
-
                         println("Found file ${fileName}${PROPERTIES_SUFFIX} for path $path : ${found.size()}")
                     }
                 }
