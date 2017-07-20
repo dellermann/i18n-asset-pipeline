@@ -18,9 +18,6 @@
 
 
 buildscript {
-    ext {
-        grailsVersion = project.grailsVersion
-    }
     repositories {
         mavenLocal()
         maven { url 'https://repo.grails.org/grails/core' }
@@ -30,7 +27,7 @@ buildscript {
     }
 }
 
-version '2.0.0-TEST'
+version '2.0.1'
 group 'org.grails.plugins'
 
 apply plugin: 'eclipse'
@@ -40,21 +37,9 @@ apply plugin: 'org.grails.grails-plugin-publish'
 apply plugin: 'org.grails.grails-gsp'
 apply plugin: 'org.grails.grails-doc'
 
-ext {
-    grailsVersion = project.grailsVersion
-    gradleWrapperVersion = project.gradleWrapperVersion
-}
-
 repositories {
     mavenLocal()
     maven { url 'https://repo.grails.org/grails/core' }
-}
-
-dependencyManagement {
-    imports {
-        mavenBom "org.grails:grails-bom:$grailsVersion"
-    }
-    applyMavenExclusions false
 }
 
 dependencies {
