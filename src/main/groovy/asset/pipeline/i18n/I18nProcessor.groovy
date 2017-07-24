@@ -126,8 +126,6 @@ class I18nProcessor extends AbstractProcessor {
      * @return          the compiled JavaScript code
      */
     private String compileJavaScript(Map<String, String> messages) {
-        Pattern pattern = Pattern.compile(/\{(\d{1,2})}/)
-        Pattern split = Pattern.compile(/((?<=(\{\d{1,2}}))|(?=(\{\d{1,2}})))/)
         StringBuilder buf = new StringBuilder()
         int i = 0
         for (Map.Entry<String, String> entry in messages.entrySet()) {
@@ -138,19 +136,7 @@ class I18nProcessor extends AbstractProcessor {
                     .replace('\\', '\\\\')
                     .replace('\n', '\\n')
                     .replace('"', '\\"')
-            if (value.find(pattern)) {
-                List<String> x = split.split(value).collect { String part ->
-                    Matcher matcher = pattern.matcher(part)
-                    if (matcher.find()) {
-                        return matcher.group(1)
-                    } else {
-                        return '"' + part + '"'
-                    }
-                }
-                buf << '        "' << entry.key << '": [' << x.join(", ") << ']'
-            } else {
-                buf << '        "' << entry.key << '": "' << value << '"'
-            }
+            buf << '        "' << entry.key << '": "' << value << '"'
         }
         return getJavaScriptCode(buf.toString())
     }
@@ -181,29 +167,21 @@ class I18nProcessor extends AbstractProcessor {
                     };
             }
             var messages = win.i18n_messages;
+            var stringFormat = function(format, prevArgs) {
+                var args = Array.prototype.slice.call(prevArgs, 1);
+                return format.replace(/{(\\d+)}/g, function(match, number) { 
+                  return typeof args[number] != 'undefined\'
+                    ? args[number] 
+                    : match
+                  ;
+                });
+             };
             win.$L = function (code) {
                 var message = messages[code];
                 if(message === undefined) {
                     return "[" + code + "]";
-                } else if(message instanceof Array) {
-                    var params;
-                    if (arguments.length === 2 && (arguments[1]) instanceof Array) {
-                        params = arguments[1];
-                    } else {
-                        params = Array.prototype.slice.call(arguments);
-                        params.shift();
-                    }
-                    var result = "";
-                    for(var i = 0; i < message.length; i++) {
-                        if(typeof message[i] === "number") {
-                            result += params[message[i]];
-                        } else {
-                            result += message[i];
-                        }
-                    }
-                    return result;
                 } else {
-                    return message;
+                    return stringFormat(message, arguments);
                 }
             }
         }(this));
