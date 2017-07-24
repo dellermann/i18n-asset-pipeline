@@ -144,8 +144,7 @@ class I18nProcessor extends AbstractProcessor {
     /**
      * Return the javascript function that will create $L
      * The function can use parameters to pass to messages
-     * Eg :  $L('code', ['foo':'bar', 'bar':'foo'] )
-     * or $L('code', 21)
+     * Eg :  $L('code', 21)
      * @param messages the javascript object containing the messages in a key value pair structure
      * @return String containing the complete javascript function
      */
