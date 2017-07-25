@@ -24,6 +24,7 @@ import asset.pipeline.AssetCompiler
 import asset.pipeline.AssetHelper
 import asset.pipeline.CacheManager
 import asset.pipeline.Processor
+import grails.util.Environment
 import groovy.transform.CompileStatic
 import java.util.regex.Pattern
 
@@ -59,6 +60,9 @@ class I18nAssetFile extends AbstractAssetFile {
     @Override
     String processedStream(AssetCompiler precompiler) {
         def skipCache = precompiler ?: (!processors || processors.size() == 0)
+        if (Environment.current == Environment.DEVELOPMENT) {
+            skipCache = true
+        }
 
         String fileText
         if(baseFile?.encoding || encoding) {
