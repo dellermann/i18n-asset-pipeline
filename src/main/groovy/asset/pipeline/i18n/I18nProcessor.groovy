@@ -182,7 +182,15 @@ class I18nProcessor extends AbstractProcessor {
                 } else {
                     return stringFormat(message, arguments);
                 }
-            }
+            };
+            win.msg = function(code) {
+               var message = messages[code];
+                if(message === undefined) {
+                    return "[" + code + "]";
+                } else {
+                    return stringFormat(message, arguments);
+                }
+            };
         }(this));
         '''
 
