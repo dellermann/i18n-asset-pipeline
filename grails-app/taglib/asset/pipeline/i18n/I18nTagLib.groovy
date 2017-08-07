@@ -42,6 +42,7 @@ class I18nTagLib implements TagLibrary {
     //-- Class fields ---------------------------
 
     static namespace = 'asset'
+    static returnObjectForTags = ['i18nPath']
 
 
     //-- Fields ---------------------------------
@@ -59,6 +60,11 @@ class I18nTagLib implements TagLibrary {
      * @attr [name] the name of the i18n file without extension; defaults to "messages"
      */
     def i18n = { attrs ->
+        def src = i18nPath(attrs)
+        out << asset.javascript(src: src)
+    }
+
+    def i18nPath = { attrs ->
         Properties manifest = AssetPipelineConfigHolder.manifest
         ApplicationContext ctx = grailsApplication.mainContext
         String mapping = assetProcessorService.assetMapping
@@ -91,18 +97,18 @@ class I18nTagLib implements TagLibrary {
             }
 
             if (manifest) {
-    			String fileUri = manifest?.getProperty(assetName, assetName)
+                String fileUri = manifest?.getProperty(assetName, assetName)
                 Resource file = ctx.getResource("assets/${fileUri}")
-				if (!file.exists()) {
-					file = ctx.getResource("classpath:assets/${fileUri}")
-				}
+                if (!file.exists()) {
+                    file = ctx.getResource("classpath:assets/${fileUri}")
+                }
                 if (file.exists()) {
                     src = assetName
                     break
                 }
             } else {
                 AssetFile file =
-                    AssetHelper.fileForUri(assetName, 'application/javascript')
+                        AssetHelper.fileForUri(assetName, 'application/javascript')
                 if (file != null) {
                     src = assetName
                     break
@@ -116,7 +122,11 @@ class I18nTagLib implements TagLibrary {
                 log.debug "Localized asset not found - using default asset '${name}.js'"
             }
         }
-
-        out << asset.javascript(src: src ?: (name + '.js'))
+        if (src != null) {
+            return src
+        }
+        else {
+            return name+'.js'
+        }
     }
 }

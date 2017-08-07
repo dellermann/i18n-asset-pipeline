@@ -25,13 +25,15 @@ To use this plugin you have to add the following code to your `build.gradle`:
 ```groovy
 buildscript {
     dependencies {
-        classpath 'org.amcworld.plugins:i18n-asset-pipeline:2.0.0'
+        classpath 'com.webbfontaine.grails.plugins:i18n-asset-pipeline:2.0.1'
     }
 }
 
 dependencies {
-    runtime 'org.grails.plugins:i18n-asset-pipeline:2.0.0'
+    runtime 'com.webbfontaine.grails.plugins:i18n-asset-pipeline:2.0.1'
 }
+
+apply plugin: "org.grails.plugins.i18n-asset-pipeline"
 ```
 
 The first dependency declaration is needed to precompile your assets (e. g.
@@ -53,6 +55,12 @@ which can be called to obtain the localized message by a given code, e. g.:
 
 ```javascript
 $(".btn").text($L("default.btn.ok"));
+
+or
+$(".btn").text($L("default.btn.ok", 25));
+or
+$(".btn").text($L("default.btn.ok", ['foo':'bar']));
+
 ```
 
 ## I18n file syntax

@@ -1,3 +1,4 @@
+.idea/
 /.classpath
 /.gradle
 /.project
@@ -7,3 +8,4 @@
 /build
 /plugin.xml
 /web-app/WEB-INF
+*.iml
