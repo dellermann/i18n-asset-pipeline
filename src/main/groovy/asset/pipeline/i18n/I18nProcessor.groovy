@@ -101,18 +101,21 @@ class I18nProcessor extends AbstractProcessor {
         String locale = m ? m.group(1) : null
         if (locale) buf << '_' << locale
         Properties props
+        Set<String> setPattern = [] as Set
+        inputText.toString().eachLine { String line ->
+            if (line.trim()) {
+                setPattern << line.trim()
+            }
+        }
         if (assetFile.encoding != null) {
-            props = loadMessages(buf.toString(), locale, assetFile.encoding)
+            props = loadMessages(setPattern, buf.toString(), locale, assetFile.encoding)
         } else {
-            props = loadMessages(buf.toString(), locale)
+            props = loadMessages(setPattern, buf.toString(), locale)
         }
         // At this point, inputText has been pre-processed (I18nPreprocessor).
         Map<String, String> messages = [:]
-        inputText.toString()
-                .eachLine { String line ->
-            if (line != '') {
-                messages.put line, props.getProperty(line, line)
-            }
+        props.stringPropertyNames().each {
+            messages.put(it, props.getProperty(it, it))
         }
         compileJavaScript messages
     }
@@ -207,7 +210,7 @@ class I18nProcessor extends AbstractProcessor {
      * @throws FileNotFoundException    if no resource with the required
      *                                  localized messages exists
      */
-    private Properties loadMessages(String fileName, String locale, String encoding = 'utf-8') {
+    private Properties loadMessages(Set<String> listPattern, String fileName, String locale, String encoding = 'utf-8') {
         Set<Resource> listRes = locateResource(fileName)
         Properties props = new Properties()
         for (resource in listRes) {
@@ -228,7 +231,37 @@ class I18nProcessor extends AbstractProcessor {
         if (props.isEmpty()) {
             throw new FileNotFoundException('File '+fileName+' has not been found')
         }
-        props
+
+        //Filter messages based on the list of regex pattern
+        Properties filteredProperties = new Properties()
+
+        //Checks every pattern against all the properties
+        for (String pattern in listPattern) {
+            String regex = '^('+pattern+')(.*)'
+            boolean hasBeenMatched = false
+
+            for (String key in props.keySet()) {
+                Matcher m = key =~ regex
+                if (m.matches()) {
+                    //Matches! We only keep the part in the last group for our JS file
+                    String keyWithoutPrefix = m.group(m.groupCount())
+                    hasBeenMatched = true
+                    if (keyWithoutPrefix) {
+                        filteredProperties.remove(key)
+                        filteredProperties.put(keyWithoutPrefix, props.getProperty(key))
+                    }
+                    else {
+                        //No prefix, we just copy the property
+                        filteredProperties.put(key, props.getProperty(key))
+                    }
+                }
+            }
+            //Not matched, we include it in the properties as it is
+            if (!hasBeenMatched) {
+                filteredProperties.put(pattern, pattern)
+            }
+        }
+        filteredProperties
     }
 
     /**

@@ -25,6 +25,7 @@ import org.springframework.core.io.InputStreamResource
 import org.springframework.core.io.Resource
 import org.springframework.core.io.ResourceLoader
 import spock.lang.Specification
+import spock.lang.Unroll
 
 
 class I18nProcessorSpec extends Specification {
@@ -104,7 +105,7 @@ special.quotationMarks = This is a "test".
         String res = processor.process('', assetFile)
 
         then:
-        getJavaScriptCode('') == res
+        checkContains('',res)
     }
 
     def 'Process i18n file with valid message codes is possible'() {
@@ -112,8 +113,8 @@ special.quotationMarks = This is a "test".
         String res = processor.process('foo.bar\nfoo.foo', assetFile)
 
         then:
-        getJavaScriptCode('''        "foo.bar": "Another test",
-        "foo.foo": "Test"''') == res
+        checkContains('''        "foo.bar": "Another test",
+        "foo.foo": "Test"''', res)
     }
 
     def 'Process i18n file with invalid message codes is possible'() {
@@ -121,8 +122,8 @@ special.quotationMarks = This is a "test".
         String res = processor.process('foo.bar\nfoo.whee', assetFile)
 
         then:
-        getJavaScriptCode('''        "foo.bar": "Another test",
-        "foo.whee": "foo.whee"''') == res
+        checkContains('''        "foo.bar": "Another test",
+        "foo.whee": "foo.whee"''',res)
     }
 
     def 'Special characters have been escaped correctly'() {
@@ -136,16 +137,44 @@ special.crlf''',
         )
 
         then:
-        getJavaScriptCode(
+        checkContains(
             '''        "special.backslash": "Test \\\\{0\\\\}",
         "special.empty": "",
         "special.quotationMarks": "This is a \\"test\\".",
         "special.crlf": "This is\\na test."'''
-            ) == res
+            ,res)
+    }
+
+    @Unroll
+    def 'Regex #regex as keys is possible'() {
+        when: 'processing a regex'
+        String res = processor.process(regex, assetFile)
+        then:
+        checkContains(expectedResult,res)
+        where :
+        regex | expectedResult
+        'special\\.' | '''            "quotationMarks": "This is a \\"test\\".",
+                                    "empty": "",
+                                    "crlf": "This is\\na test.",
+                                    "backslash": "Test \\\\{0\\\\}"'''
+        'foo\\.' | '''        "bar": "Another test",
+                            "foo": "Test"'''
+        'sp[^\\.]*\\.'| '''            "quotationMarks": "This is a \\"test\\".",
+                                    "empty": "",
+                                    "crlf": "This is\\na test.",
+                                    "backslash": "Test \\\\{0\\\\}"'''
     }
 
 
     //-- Non-public methods ---------------------
+    boolean checkContains(String testString, String processorResult) {
+        boolean contains = true
+        testString?.eachLine {
+           contains &= processorResult.contains(it.trim().replaceAll(',', ''))
+        }
+        contains
+    }
+
     String getJavaScriptCode(String messages) {
         StringBuilder buf = new StringBuilder('''(function (win) {
             if (win.i18n_messages) {
