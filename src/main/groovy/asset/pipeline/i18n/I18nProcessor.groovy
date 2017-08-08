@@ -237,14 +237,16 @@ class I18nProcessor extends AbstractProcessor {
 
         //Checks every pattern against all the properties
         for (String pattern in listPattern) {
-            String regex = '^('+pattern+')(.*)'
             boolean hasBeenMatched = false
 
             for (String key in props.keySet()) {
-                Matcher m = key =~ regex
+                Matcher m = key =~ pattern
+                if (m.groupCount() == 0) {
+                    m = key =~ '^' + pattern + '(.*)'
+                }
                 if (m.matches()) {
                     //Matches! We only keep the part in the last group for our JS file
-                    String keyWithoutPrefix = m.group(m.groupCount())
+                    String keyWithoutPrefix = m.group(1)
                     hasBeenMatched = true
                     if (keyWithoutPrefix) {
                         filteredProperties.remove(key)

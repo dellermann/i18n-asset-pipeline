@@ -42,6 +42,7 @@ special.backslash = Test \\\\{0\\\\}
 special.crlf = This is\\n\\
         a test.
 special.quotationMarks = This is a "test".
+toto.suffix = Suffix
 '''
 
 
@@ -163,6 +164,7 @@ special.crlf''',
                                     "empty": "",
                                     "crlf": "This is\\na test.",
                                     "backslash": "Test \\\\{0\\\\}"'''
+        '(.*)\\.suffix' | '''"toto": "Suffix"'''
     }
 
 
