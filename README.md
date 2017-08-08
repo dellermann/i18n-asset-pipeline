@@ -78,11 +78,18 @@ Each i18n file must be defined according to the following rules:
 * All other lines are treated as messsage codes which are translated to the
   required language.
 * Comments after import statements and message codes are not allowed.
+* Regex can be used. For example `client\.` will import all the keys starting with client like client.sample . 
+  The key will be transformed into sample in the JS file.
+  To be able to specifix suffix, the first group in the regex will be used as the final key in the js file
+  Example : (.*)\.suffix will transform toto.suffix = Test into toto = Test in the js file
+
 
 Each i18n file may contain asset-pipeline `require` statements to load other
 assets such as JavaScript files.  **ATTENTION!** Don't use `require` to load
 other i18n files because they will not be processed correctly.  Use the
 `@import` declaration instead.
+
+*
 
 ## Typical file structure
 
