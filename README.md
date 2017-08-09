@@ -36,6 +36,8 @@ dependencies {
 apply plugin: "org.grails.plugins.i18n-asset-pipeline"
 ```
 
+## CAREFUL the apply plugin must be  applied after the plugin that creates :assetCompile. The order is important !
+
 The first dependency declaration is needed to precompile your assets (e. g.
 when building a WAR file).  The second one provides the necessary
 `<asset:i18n>` tag and compiles the assets on the fly (e. g. in development)
