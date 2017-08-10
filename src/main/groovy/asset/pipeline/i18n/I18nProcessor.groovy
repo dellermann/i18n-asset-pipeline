@@ -229,7 +229,8 @@ class I18nProcessor extends AbstractProcessor {
             }
         }
         if (props.isEmpty()) {
-            throw new FileNotFoundException('File '+fileName+' has not been found')
+            throw new FileNotFoundException('File '+fileName+' has not been found. Is the plugin org.grails.plugins.i18n-asset-pipeline ' +
+                    'applied correctly ? Is another plugin resetting the dependencies of the task assetCompile ?')
         }
 
         //Filter messages based on the list of regex pattern
