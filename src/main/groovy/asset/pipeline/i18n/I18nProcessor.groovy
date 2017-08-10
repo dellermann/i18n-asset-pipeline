@@ -25,18 +25,19 @@ import asset.pipeline.AssetFile
 import grails.io.IOUtils
 import grails.util.Holders
 import groovy.transform.CompileStatic
+import org.grails.core.io.StaticResourceLoader
 import org.grails.plugins.BinaryGrailsPlugin
 import org.springframework.core.io.DefaultResourceLoader
 import org.springframework.core.io.FileSystemResourceLoader
 import org.springframework.core.io.Resource
 import org.springframework.core.io.ResourceLoader
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver
 import org.springframework.core.io.support.ResourcePatternResolver
 
 
 import org.springframework.core.io.support.ResourcePatternUtils
 
 import java.util.regex.Matcher
-import java.util.regex.Pattern
 
 /**
  * The class {@code I18nProcessor} represents an asset processor which converts
@@ -65,7 +66,6 @@ import java.util.regex.Pattern
  * @author  David Estes
  * @version 3.0
  */
-@CompileStatic
 class I18nProcessor extends AbstractProcessor {
 
     //-- Constants ------------------------------
@@ -94,6 +94,7 @@ class I18nProcessor extends AbstractProcessor {
 
     //-- Public methods -------------------------
 
+    @CompileStatic
     @Override
     String process(String inputText, AssetFile assetFile) {
         Matcher m = assetFile.name =~ /._(\w+)\.i18n$/
@@ -108,9 +109,9 @@ class I18nProcessor extends AbstractProcessor {
             }
         }
         if (assetFile.encoding != null) {
-            props = loadMessages(setPattern, buf.toString(), locale, assetFile.encoding)
+            props = loadMessages(assetFile, setPattern, buf.toString(), locale, assetFile.encoding)
         } else {
-            props = loadMessages(setPattern, buf.toString(), locale)
+            props = loadMessages(assetFile, setPattern, buf.toString(), locale)
         }
         // At this point, inputText has been pre-processed (I18nPreprocessor).
         Map<String, String> messages = [:]
@@ -128,6 +129,7 @@ class I18nProcessor extends AbstractProcessor {
      * @param messages  the given messages
      * @return          the compiled JavaScript code
      */
+    @CompileStatic
     private String compileJavaScript(Map<String, String> messages) {
         StringBuilder buf = new StringBuilder()
         int i = 0
@@ -151,6 +153,7 @@ class I18nProcessor extends AbstractProcessor {
      * @param messages the javascript object containing the messages in a key value pair structure
      * @return String containing the complete javascript function
      */
+    @CompileStatic
     String getJavaScriptCode(String messages) {
         StringBuilder buf = new StringBuilder('''(function (win) {
             if (win.i18n_messages) {
@@ -210,8 +213,8 @@ class I18nProcessor extends AbstractProcessor {
      * @throws FileNotFoundException    if no resource with the required
      *                                  localized messages exists
      */
-    private Properties loadMessages(Set<String> listPattern, String fileName, String locale, String encoding = 'utf-8') {
-        Set<Resource> listRes = locateResource(fileName)
+    private Properties loadMessages(AssetFile assetFile, Set<String> listPattern, String fileName, String locale, String encoding = 'utf-8') {
+        Set<Resource> listRes = locateResource(assetFile, fileName)
         Properties props = new Properties()
         for (resource in listRes) {
             String propertiesString = IOUtils.toString(resource.inputStream, encoding)
@@ -219,18 +222,26 @@ class I18nProcessor extends AbstractProcessor {
         }
         if (Holders.pluginManager?.allPlugins != null) {
             for (plugin in Holders.pluginManager.allPlugins) {
-                if (plugin instanceof BinaryGrailsPlugin) {
-                    Locale loc = locale ? new Locale(locale) : new Locale('en')
-                    Properties propPlugin = ((BinaryGrailsPlugin) plugin).getProperties(loc)
-                    if (propPlugin != null) {
-                        props.putAll(propPlugin)
+                if (plugin instanceof BinaryGrailsPlugin && plugin.baseResourcesResource != null) {
+                    StaticResourceLoader resourceLoader = new StaticResourceLoader()
+                    resourceLoader.setBaseResource(plugin.baseResourcesResource)
+                    ResourcePatternResolver resolver = new PathMatchingResourcePatternResolver(resourceLoader)
+                    Resource[] resource = resolver.getResources('/**/'+assetFile.path)
+
+                    if (resource.size() > 0 && resource[0].exists()) {
+                        Locale loc = locale ? new Locale(locale) : new Locale('en')
+                        Properties propPlugin = ((BinaryGrailsPlugin) plugin).getProperties(loc)
+                        if (propPlugin != null) {
+                            props.putAll(propPlugin)
+                        }
                     }
                 }
             }
         }
         if (props.isEmpty()) {
             throw new FileNotFoundException('File '+fileName+' has not been found. Is the plugin org.grails.plugins.i18n-asset-pipeline ' +
-                    'applied correctly ? Is another plugin resetting the dependencies of the task assetCompile ?')
+                    'applied correctly ? Is another plugin resetting the dependencies of the task assetCompile ? '+
+                    'Does the file exist ?')
         }
 
         //Filter messages based on the list of regex pattern
@@ -284,7 +295,8 @@ class I18nProcessor extends AbstractProcessor {
      * @throws FileNotFoundException    if no resource with the required
      *                                  localized messages exists
      */
-    private Set<Resource> locateResource(String fileName) {
+    @CompileStatic
+    private Set<Resource> locateResource(AssetFile assetFile, String fileName) {
         Set<Resource> resourceList = [] as Set
         Resource resource =
                 resourceLoader.getResource("classpath*:" + fileName + PROPERTIES_SUFFIX)
@@ -320,11 +332,15 @@ class I18nProcessor extends AbstractProcessor {
                 if (!path) {
                     continue
                 }
-                Resource[] found = patternResolver.getResources('jar:file:' + path + '!/' + fileName + PROPERTIES_SUFFIX)
-                for (res in found) {
-                    if (res.exists()) {
-                        resourceList.add(res)
-                        println("Found file ${fileName}${PROPERTIES_SUFFIX} for path $path : ${found.size()}")
+                Resource[] assetPath = patternResolver.getResources('jar:file:' + path + '!/**/' + assetFile.path)
+                if (assetPath?.size() > 0 && assetPath[0].exists()) {
+                    println("Found ressources for path jar:file:$path!/**/${assetFile.path}")
+                    Resource[] found = patternResolver.getResources('jar:file:' + path + '!/' + fileName + PROPERTIES_SUFFIX)
+                    for (res in found) {
+                        if (res.exists()) {
+                            resourceList.add(res)
+                            println("Found file ${fileName}${PROPERTIES_SUFFIX} for path $path : ${found.size()} . Asset file path : ${assetFile.path}")
+                        }
                     }
                 }
             }
