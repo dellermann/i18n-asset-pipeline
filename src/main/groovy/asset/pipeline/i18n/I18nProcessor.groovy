@@ -213,37 +213,14 @@ class I18nProcessor extends AbstractProcessor {
      * @throws FileNotFoundException    if no resource with the required
      *                                  localized messages exists
      */
+    @CompileStatic
     private Properties loadMessages(AssetFile assetFile, Set<String> listPattern, String fileName, String locale, String encoding = 'utf-8') {
-        Set<Resource> listRes = locateResource(assetFile, fileName)
-        Properties props = new Properties()
-        for (resource in listRes) {
-            String propertiesString = IOUtils.toString(resource.inputStream, encoding)
-            props.load(new StringReader(propertiesString))
-        }
-        if (Holders.pluginManager?.allPlugins != null) {
-            for (plugin in Holders.pluginManager.allPlugins) {
-                if (plugin instanceof BinaryGrailsPlugin && plugin.baseResourcesResource != null) {
-                    StaticResourceLoader resourceLoader = new StaticResourceLoader()
-                    resourceLoader.setBaseResource(plugin.baseResourcesResource)
-                    ResourcePatternResolver resolver = new PathMatchingResourcePatternResolver(resourceLoader)
-                    Resource[] resource = resolver.getResources('/**/'+assetFile.path)
-
-                    if (resource.size() > 0 && resource[0].exists()) {
-                        Locale loc = locale ? new Locale(locale) : new Locale('en')
-                        Properties propPlugin = ((BinaryGrailsPlugin) plugin).getProperties(loc)
-                        if (propPlugin != null) {
-                            props.putAll(propPlugin)
-                        }
-                    }
-                }
-            }
-        }
+        Properties props = locateProperties(assetFile, fileName, encoding, locale)
         if (props.isEmpty()) {
             throw new FileNotFoundException('File '+fileName+' has not been found. Is the plugin org.grails.plugins.i18n-asset-pipeline ' +
                     'applied correctly ? Is another plugin resetting the dependencies of the task assetCompile ? '+
                     'Does the file exist ?')
         }
-
         //Filter messages based on the list of regex pattern
         Properties filteredProperties = new Properties()
 
@@ -282,6 +259,7 @@ class I18nProcessor extends AbstractProcessor {
      * Locates the resource containing the localized messages.  The method looks
      * in the following places:
      * <ul>
+     *   <li>in the plugins</li>
      *   <li>in classpath with extension {@code .properties}</li>
      *   <li>in classpath with extension {@code .xml}</li>
      *   <li>in file system in folder {@code grails-app/i18n} with extension
@@ -290,39 +268,17 @@ class I18nProcessor extends AbstractProcessor {
      *   {@code .xml}</li>
      * </ul>
      *
+     * @param assetFile                 the asset file we are processing
      * @param fileName                  the given base file name
+     * @param encoding                  the default encoding
      * @return                          the resource containing the messages
      * @throws FileNotFoundException    if no resource with the required
      *                                  localized messages exists
      */
-    @CompileStatic
-    private Set<Resource> locateResource(AssetFile assetFile, String fileName) {
-        Set<Resource> resourceList = [] as Set
-        Resource resource =
-                resourceLoader.getResource("classpath*:" + fileName + PROPERTIES_SUFFIX)
-        if (resource?.exists()) {
-            resourceList << resource
-        }
-        Resource resource2 = resourceLoader.getResource(fileName + XML_SUFFIX)
-        if (resource2?.exists()) {
-            resourceList << resource2
-        }
-        Resource resource3 = resourceLoader.getResource(
-                "file:grails-app/i18n/${fileName}${PROPERTIES_SUFFIX}"
-        )
-        if (resource3?.exists()) {
-            resourceList << resource3
-        }
-        Resource resource4 = resourceLoader.getResource(
-                "file:grails-app/i18n/${fileName}${XML_SUFFIX}"
-        )
-        if (resource4?.exists()) {
-            resourceList << resource4
-        }
-        Resource resource5 = resourceLoader.getResource("${fileName}${PROPERTIES_SUFFIX}")
-        if (resource5?.exists()) {
-            resourceList << resource5
-        }
+    private Properties locateProperties(AssetFile assetFile, String fileName, String encoding, String locale) {
+        Properties properties = new Properties()
+        //If we are processing a plugin i18n file, we need to search the properties in the plugin too.
+        //The system property is set by the getRuntimeClasspath gradle task at build time
         String paths = System.getProperty("com.i18n-asset-pipeline.pluginRuntimePath")
         if (paths) {
             String[] runtimePath = paths.split(',')
@@ -332,19 +288,77 @@ class I18nProcessor extends AbstractProcessor {
                 if (!path) {
                     continue
                 }
-                Resource[] assetPath = patternResolver.getResources('jar:file:' + path + '!/**/' + assetFile.path)
+                //Is the i18n file in the plugin ?
+                Resource[] assetPath = patternResolver.getResources('jar:file:' + path + '!/**/assets/' + assetFile.path)
                 if (assetPath?.size() > 0 && assetPath[0].exists()) {
-                    println("Found ressources for path jar:file:$path!/**/${assetFile.path}")
+                    //It is, we search for the properties file
+                    println("Found ressources for path jar:file:$path!/**/assets/${assetFile.path}")
                     Resource[] found = patternResolver.getResources('jar:file:' + path + '!/' + fileName + PROPERTIES_SUFFIX)
                     for (res in found) {
                         if (res.exists()) {
-                            resourceList.add(res)
                             println("Found file ${fileName}${PROPERTIES_SUFFIX} for path $path : ${found.size()} . Asset file path : ${assetFile.path}")
+                            loadProperties(properties, [res], encoding)
                         }
                     }
                 }
             }
         }
-        return resourceList
+        //Only useful for dev mode
+        else if (Holders.pluginManager?.allPlugins != null) {
+            for (plugin in Holders.pluginManager.allPlugins) {
+                if (plugin instanceof BinaryGrailsPlugin && plugin.baseResourcesResource != null) {
+                    StaticResourceLoader resourceLoader = new StaticResourceLoader()
+                    resourceLoader.setBaseResource(plugin.baseResourcesResource)
+                    ResourcePatternResolver resolver = new PathMatchingResourcePatternResolver(resourceLoader)
+                    Resource[] resource = resolver.getResources('/**/assets/'+assetFile.path)
+
+                    if (resource.size() > 0 && resource[0].exists()) {
+                        Locale loc = locale ? new Locale(locale) : new Locale('en')
+                        Properties propPlugin = ((BinaryGrailsPlugin) plugin).getProperties(loc)
+                        if (propPlugin != null) {
+                            properties.putAll(propPlugin)
+                        }
+                    }
+                }
+            }
+        }
+        //No properties has been found in the plugins, we look for the properties in the project.
+        if (properties.isEmpty()) {
+            Set<Resource> resourceList = [] as Set
+            Resource resource =
+                    resourceLoader.getResource("classpath*:" + fileName + PROPERTIES_SUFFIX)
+            if (resource?.exists()) {
+                resourceList << resource
+            }
+            resource = resourceLoader.getResource(fileName + XML_SUFFIX)
+            if (resource?.exists()) {
+                resourceList << resource
+            }
+            resource = resourceLoader.getResource(
+                    "file:grails-app/i18n/${fileName}${PROPERTIES_SUFFIX}"
+            )
+            if (resource?.exists()) {
+                resourceList << resource
+            }
+            resource = resourceLoader.getResource(
+                    "file:grails-app/i18n/${fileName}${XML_SUFFIX}"
+            )
+            if (resource?.exists()) {
+                resourceList << resource
+            }
+            resource = resourceLoader.getResource("${fileName}${PROPERTIES_SUFFIX}")
+            if (resource?.exists()) {
+                resourceList << resource
+            }
+            loadProperties(properties, resourceList, encoding)
+        }
+        return properties
+    }
+
+    private loadProperties(Properties props, Collection<Resource> resource, String encoding) {
+        for (res in resource) {
+            String propertiesString = IOUtils.toString(res.inputStream, encoding)
+            props.load(new StringReader(propertiesString))
+        }
     }
 }
