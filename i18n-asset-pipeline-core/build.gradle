@@ -1,0 +1,13 @@
+group 'com.webbfontaine.grails.plugins'
+
+apply plugin: 'maven'
+apply plugin: 'maven-publish'
+
+
+dependencies {
+    compile localGroovy()
+    compile "com.bertramlabs.plugins:asset-pipeline-core:${versions.asset}"
+    testCompile ("org.spockframework:spock-core:1.1-groovy-2.4") {
+            exclude(module : 'groovy-all')
+    }
+}

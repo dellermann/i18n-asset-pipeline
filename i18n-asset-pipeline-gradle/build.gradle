@@ -1,0 +1,12 @@
+group 'com.webbfontaine.grails.plugins'
+
+apply plugin: 'maven'
+apply plugin: 'maven-publish'
+
+
+
+dependencies {
+    compile project(':i18n-asset-pipeline-core')
+    compile gradleApi()
+
+}

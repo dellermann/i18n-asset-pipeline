@@ -17,6 +17,7 @@ i18n-asset-pipeline version | required for
  0.x                        | `asset-pipeline` up to version 1.9.9
  1.x                        | `asset-pipeline` version 2.0.0 or higher
  2.x                        | Grails 3.x
+ 3.x                        | Plugin architecture change
 
 ## Installation
 
@@ -25,12 +26,12 @@ To use this plugin you have to add the following code to your `build.gradle`:
 ```groovy
 buildscript {
     dependencies {
-        classpath 'com.webbfontaine.grails.plugins:i18n-asset-pipeline:2.0.1'
+        classpath 'com.webbfontaine.grails.plugins:i18n-asset-pipeline-gradle:3.0.0'
     }
 }
 
 dependencies {
-    runtime 'com.webbfontaine.grails.plugins:i18n-asset-pipeline:2.0.1'
+    runtime 'com.webbfontaine.grails.plugins:i18n-asset-pipeline-grails:3.0.0'
 }
 
 apply plugin: "org.grails.plugins.i18n-asset-pipeline"
