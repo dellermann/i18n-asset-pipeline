@@ -1,0 +1,13 @@
+/*
+ *
+ *  * Copyrights 2002-2016 Webb Fontaine
+ *  * Date: 18/08/2017
+ *  * This software is the proprietary information of Webb Fontaine.
+ *  * Its use is subject to License terms.
+ *
+ */
+
+include 'i18n-asset-pipeline-core'
+include 'i18n-asset-pipeline-gradle'
+include 'i18n-asset-pipeline-grails'
+

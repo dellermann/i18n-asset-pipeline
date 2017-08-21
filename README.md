@@ -17,6 +17,7 @@ i18n-asset-pipeline version | required for
  0.x                        | `asset-pipeline` up to version 1.9.9
  1.x                        | `asset-pipeline` version 2.0.0 or higher
  2.x                        | Grails 3.x
+ 3.x                        | Plugin architecture change
 
 ## Installation
 
@@ -25,14 +26,18 @@ To use this plugin you have to add the following code to your `build.gradle`:
 ```groovy
 buildscript {
     dependencies {
-        classpath 'org.amcworld.plugins:i18n-asset-pipeline:2.0.0'
+        classpath 'com.webbfontaine.grails.plugins:i18n-asset-pipeline-gradle:3.0.0'
     }
 }
 
 dependencies {
-    runtime 'org.grails.plugins:i18n-asset-pipeline:2.0.0'
+    runtime 'com.webbfontaine.grails.plugins:i18n-asset-pipeline-grails:3.0.0'
 }
+
+apply plugin: "org.grails.plugins.i18n-asset-pipeline"
 ```
+
+## CAREFUL the apply plugin must be  applied after the plugin that creates :assetCompile. The order is important !
 
 The first dependency declaration is needed to precompile your assets (e. g.
 when building a WAR file).  The second one provides the necessary
@@ -53,6 +58,12 @@ which can be called to obtain the localized message by a given code, e. g.:
 
 ```javascript
 $(".btn").text($L("default.btn.ok"));
+
+or
+$(".btn").text($L("default.btn.ok", 25));
+or
+$(".btn").text($L("default.btn.ok", ['foo':'bar']));
+
 ```
 
 ## I18n file syntax
@@ -70,11 +81,18 @@ Each i18n file must be defined according to the following rules:
 * All other lines are treated as messsage codes which are translated to the
   required language.
 * Comments after import statements and message codes are not allowed.
+* Regex can be used. For example `client\.` will import all the keys starting with client like client.sample . 
+  The key will be transformed into sample in the JS file.
+  To be able to specifix suffix, the first group in the regex will be used as the final key in the js file
+  Example : (.*)\.suffix will transform toto.suffix = Test into toto = Test in the js file
+
 
 Each i18n file may contain asset-pipeline `require` statements to load other
 assets such as JavaScript files.  **ATTENTION!** Don't use `require` to load
 other i18n files because they will not be processed correctly.  Use the
 `@import` declaration instead.
+
+*
 
 ## Typical file structure
 

@@ -1,0 +1,7 @@
+dependencies {
+    compile localGroovy()
+    compile "com.bertramlabs.plugins:asset-pipeline-core:${versions.asset}"
+    testCompile ("org.spockframework:spock-core:1.1-groovy-2.4") {
+            exclude(module : 'groovy-all')
+    }
+}
