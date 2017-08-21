@@ -15,6 +15,7 @@ buildscript {
     }
     dependencies {
         classpath "org.grails:grails-gradle-plugin:$grailsVersion"
+        classpath 'com.gradle.publish:plugin-publish-plugin:0.9.7'
     }
 }
 
@@ -55,6 +56,94 @@ subprojects { p ->
         //The version is mandatory because the dependencies wont be inside the pom
         compile "org.grails:grails-core:$grailsVersion"
     }
+
+
+    if(!p.name.endsWith('-grails')){
+        apply plugin: 'com.jfrog.bintray'
+        apply plugin: 'com.gradle.plugin-publish'
+        apply plugin: 'maven'
+        apply plugin: 'maven-publish'
+        publishing {
+            publications {
+                maven(MavenPublication) {
+                    groupId p.group
+                    artifactId p.name
+                    pom.withXml {
+                        asNode().children().last() + {
+                            resolveStrategy = Closure.DELEGATE_FIRST
+                            name p.name
+                            description 'I18n asset-pipeline plugin'
+                            url 'https://github.com/webbfontaine/i18n-asset-pipeline'
+                            scm {
+                                url 'https://github.com/webbfontaine/i18n-asset-pipeline'
+                            }
+                            licenses {
+                                license {
+                                    name 'The Apache Software License, Version 2.0'
+                                    url 'http://www.apache.org/license/LICENSE-2.0.txt'
+                                    distribution 'repo'
+                                }
+                            }
+                            developers {
+                                developer {
+                                    id 'dellermann'
+                                    name 'Daniel Ellermann'
+                                }
+                                developer {
+                                    id 'anthonymoreira'
+                                    name 'Anthony Moreira'
+                                }
+                                developer {
+                                    id 'tarikchrouki'
+                                    name 'Tarik Chrouki'
+                                }
+                            }
+                        }
+                    }
+                    from components.java
+                    artifact sourcesJar
+                    artifact javadocJar
+                }
+            }
+        }
+
+        bintray {
+            user = project.hasProperty('bintrayUser')    \
+           ? project.property('bintrayUser')
+                    : System.getenv('BINTRAY_USER')
+            key = project.hasProperty('bintrayApiKey')    \
+           ? project.property('bintrayApiKey')
+                    : System.getenv('BINTRAY_API_KEY')
+            publish=true
+            publications = ['maven']
+            pkg {
+                repo = 'i18n-asset-pipeline'
+                userOrg = 'webbfontaine'
+                name = p.name
+                licenses = ['Apache-2.0']
+                vcsUrl = 'https://github.com/webbfontaine/i18n-asset-pipeline.git'
+                version {
+                    name = p.version
+                }
+            }
+        }
+
+        task javadocJar(type: Jar, dependsOn: javadoc) {
+            classifier = 'javadoc'
+            from 'build/docs/javadoc'
+        }
+
+        task sourcesJar(type: Jar) {
+            classifier = 'sources'
+            from sourceSets.main.allSource
+        }
+        artifacts {
+            archives javadocJar
+            archives sourcesJar
+        }
+
+    }
+
 }
 
 task wrapper(type: Wrapper) {

@@ -40,12 +40,13 @@ dependencies {
 }
 
 grailsPublish {
-    user = project.hasProperty('bintrayUser')    \
-           ? project.property('bintrayUser')
+    user = project.hasProperty('bintrayUser')     \
+            ? project.property('bintrayUser')
             : System.getenv('BINTRAY_USER')
-    key = project.hasProperty('bintrayApiKey')    \
-           ? project.property('bintrayApiKey')
+    key = project.hasProperty('bintrayApiKey')     \
+            ? project.property('bintrayApiKey')
             : System.getenv('BINTRAY_API_KEY')
+    repo = 'i18n-asset-pipeline'
     userOrg = 'webbfontaine'
     githubSlug = "webbfontaine/${project.name}"
     license {
@@ -53,5 +54,5 @@ grailsPublish {
     }
     title = project.name
     desc = 'asset-pipeline plugin to use localized messages in JavaScript.'
-    developers = [dellermann: 'Daniel Ellermann', anthonymoreira: 'Anthony Moreira', tarikchrouki:"Tarik Chrouki"]
+    developers = [dellermann: 'Daniel Ellermann', anthonymoreira: 'Anthony Moreira', tarikchrouki: "Tarik Chrouki",]
 }
